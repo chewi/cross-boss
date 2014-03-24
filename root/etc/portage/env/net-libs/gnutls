@@ -1,0 +1,2 @@
+# Gentoo bugs #438222.
+EXTRA_ECONF="${EXTRA_ECONF} --without-libiconv-prefix --without-libintl-prefix --without-libpth-prefix --without-libpthread-prefix --without-librt-prefix --without-libz-prefix"

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# ./configure usually accepts --sysroot but this is more reliable.
+exec "/usr/bin/${0##*/}" --sysroot="${CS_SYSROOT}" "${@}"

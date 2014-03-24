@@ -1,0 +1,10 @@
+#!/bin/bash
+
+export CROSS_STAGE=$(dirname $(dirname $(readlink -f "$0")))
+source "${CROSS_STAGE}/scripts/common.sh"
+export-env
+set-sysroot
+
+shift
+cross-emerge "${@}"
+echo

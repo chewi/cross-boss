@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Strip harmful flags from *-config.
+"${ROOT:-/}usr/bin/${0##*/}" "${@}" | sed -r "s/-[IL][^ ]*//g"

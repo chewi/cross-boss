@@ -1,0 +1,14 @@
+Without this, the build looks in /usr/include for the libeinfo
+headers. That's a catch 22!
+
+--- openrc-0.9.9.3/src/librc/Makefile.orig	2012-03-11 20:04:51.000000000 +0000
++++ openrc-0.9.9.3/src/librc/Makefile	2012-05-02 21:56:45.493999153 +0100
+@@ -7,7 +7,7 @@
+ 
+ LDADD+=		${LIBKVM}
+ 
+-CPPFLAGS+=	-I../includes
++CPPFLAGS+=	-I../includes -I../libeinfo
+ 
+ MK=		../../mk
+ include ${MK}/lib.mk

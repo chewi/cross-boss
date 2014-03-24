@@ -1,0 +1,28 @@
+# No bug for this because it requires QEMU. gobject-introspection is a
+# giant pain in the ass, as the aging GNOME bug #592311 attests. There
+# is even a project dedicated to cross-compiling it and even that
+# still requires QEMU. We are not able to make use of that but at
+# least the hacks in this file are short.
+
+src_prepare() {
+	# Wrong pkg-config can return wrong libdir variable.
+	sed -i "s:shell pkg-config:shell \$(PKG_CONFIG):g" Makefile.* || die
+
+	# Use QEMU-wrapped binaries via PATH in future.
+	sed -i "s:\${bindir}/::g" *.pc.in || die
+
+	# configure fails without this.
+	if [[ "${ROOT}" != "/" ]]; then
+		G2CONF="PYTHONHOME=${ROOT}usr PYTHONPATH=${ROOT}usr/$(get_libdir)/${EPYTHON}:/usr/$(get_libdir)/${EPYTHON}/lib-dynload"
+	fi
+}
+
+src_compile() {
+	if [[ "${ROOT}" != "/" ]]; then
+		emake \
+			INTROSPECTION_COMPILER="env PATH=.libs:\$(PATH) ${CROSS_STAGE}/bin/cb-proot ${ROOT} ${S}/g-ir-compiler" \
+			INTROSPECTION_SCANNER="env PATH=.libs:\$(PATH) LPATH=.libs CC=\$(CC) PYTHONPATH=${S} UNINSTALLED_INTROSPECTION_SRCDIR=${S} UNINSTALLED_INTROSPECTION_BUILDDIR=${S} ${CROSS_STAGE}/bin/cb-proot ${ROOT} ${S}/g-ir-scanner"
+	else
+		emake
+	fi
+}

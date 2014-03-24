@@ -1,0 +1,2 @@
+# Gentoo bug #299008.
+EXTRA_ECONF="${EXTRA_ECONF} --disable-cairo-tests"

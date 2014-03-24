@@ -1,0 +1,55 @@
+#!/bin/bash
+
+export CROSS_STAGE=$(dirname $(dirname $(readlink -f "$0")))
+source "${CROSS_STAGE}/scripts/common.sh"
+
+export MAKEOPTS=$(portageq envvar MAKEOPTS)
+QEMU=$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar PORTAGE_EMULATOR)
+
+shift 1
+set -- emerge "${@}"
+[[ -n "${QEMU}" ]] && set -- -q "${QEMU%% *}" "${@}"
+
+if [[ -e "/usr/bin/distcc" ]]; then
+	DIR="${ROOT}/usr/lib/cross-boss/distcc"
+	PUMP="pump"
+
+	ebegin "Recreating distcc symlinks"
+	mkdir -p "${DIR}" || die
+	rm -f "${DIR}"/*
+
+	for TOOL in c++ g++ gcc; do
+		ln -snf "/host-rootfs/usr/bin/distcc" "${DIR}/${HOST}-${TOOL}" || die
+	done
+
+	for TOOL in c++ g++ gcc cc; do
+		ln -snf "/host-rootfs${CROSS_STAGE}/scripts/distcc-wrapper" "${DIR}/${TOOL}" || die
+	done
+	eend 0
+
+	[[ -z "${DISTCCD_PORT}" ]] && DISTCCD_PORT=3634
+	JOBS=$(echo "${MAKEOPTS}" | grep -P -o "(?<=-j)\d" || echo 2)
+
+	ebegin "Starting distccd on port ${DISTCCD_PORT}"
+	PATH="${ROOT}/usr/lib/cross-boss/bin" \
+	CS_SYSROOT="${ROOT}" \
+	/usr/bin/distccd \
+		--daemon --no-detach --user distcc \
+		--listen 127.0.0.1 -a 127.0.0.1 -p "${DISTCCD_PORT}" &
+
+	DISTCCD_PID=$!
+	eend 0
+
+	export \
+		FEATURES="${FEATURES} distcc" \
+		DISTCC_HOSTS="127.0.0.1:${DISTCCD_PORT}/${JOBS},cpp,lzo"
+else
+	ewarn "Please emerge distcc to get a speed boost!"
+	unset pump
+fi
+
+${PUMP} proot -R "${ROOT}" -b . \
+	-b "$(portageq get_repo_path / gentoo):$(portageq get_repo_path "${ROOT}" gentoo)" \
+	-b "$(portageq envvar DISTDIR):$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar DISTDIR)" \
+	-b "$(portageq envvar PORTAGE_TMPDIR):$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar PORTAGE_TMPDIR)" \
+	"${@}"

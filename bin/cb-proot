@@ -1,0 +1,29 @@
+#!/bin/sh
+
+ARG0="${0##*/}"
+
+if [ "${ARG0}" == "cb-proot" ]; then
+	ROOT="${1%/}"
+	ARG0="${2}"
+	shift 2
+else
+	ROOT="${SYSROOT}"
+fi
+
+if [ -z "${ROOT}" ] || [ ! -d "${ROOT}/etc/portage/make.profile" ]; then
+	echo " * Please specify a valid target directory." >&2
+	exit 1
+fi
+
+export SANDBOX_WRITE="${SANDBOX_WRITE}:${ROOT%/}"
+export MAKEOPTS=$(portageq envvar MAKEOPTS)
+QEMU=$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar PORTAGE_EMULATOR)
+
+set -- "${ARG0}" "${@}"
+[ -n "${QEMU}" ] && set -- -q "${QEMU%% *}" "${@}"
+
+exec proot -R "${ROOT}" -b . \
+	-b "$(portageq get_repo_path / gentoo):$(portageq get_repo_path "${ROOT}" gentoo)" \
+	-b "$(portageq envvar DISTDIR):$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar DISTDIR)" \
+	-b "$(portageq envvar PORTAGE_TMPDIR):$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar PORTAGE_TMPDIR)" \
+	"${@}"

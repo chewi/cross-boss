@@ -1,0 +1,3 @@
+#!/host-rootfs/bin/sh
+
+exec /usr/lib/cross-boss/distcc/${CHOST}-g${0:$[-2]} "$@"

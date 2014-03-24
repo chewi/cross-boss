@@ -1,0 +1,2 @@
+# Gentoo bug #438222.
+EXTRA_ECONF="${EXTRA_ECONF} --without-libgnutls-prefix --without-libssl-prefix"

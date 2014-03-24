@@ -1,0 +1,11 @@
+# No bug report for this one because it's quite an ugly hack. I'm only
+# applying it to distcc because it's a very useful package. The Python
+# folks *really* need to fix cross-building extensions.
+
+src_compile() {
+	if [[ "${ROOT}" != "/" ]]; then
+		emake PYTHONHOME="${ROOT}usr" PYTHONPATH="${ROOT}usr/$(get_libdir)/${EPYTHON}:/usr/$(get_libdir)/${EPYTHON}/lib-dynload"
+	else
+		emake
+	fi
+}

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# If a package is missing then it's probably because it's a build-only
+# dependency so check /. This is not ideal but works in most
+# cases... except Cairo! It has lots of semi-automagic dependencies.
+
+if [ "${CATEGORY}/${PN}" != "x11-libs/cairo" ]; then
+	"/usr/bin/${0##*/}" "${@}" || PKG_CONFIG_ALLOW_SYSTEM_CFLAGS=1 /usr/bin/pkg-config "${@}"
+else
+	"/usr/bin/${0##*/}" "${@}"
+fi

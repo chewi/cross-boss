@@ -1,0 +1,38 @@
+#!/bin/bash
+
+export CROSS_STAGE=$(dirname $(dirname $(readlink -f "$0")))
+source "${CROSS_STAGE}/scripts/common.sh"
+export-env
+
+einfo "Emerging virtual/os-headers ..."
+cross-emerge -uv1 virtual/os-headers || die "Unable to emerge virtual/os-headers."
+
+echo; einfo "Emerging virtual/libc ..."
+cross-emerge -uv1 virtual/libc || die "Unable to emerge virtual/libc."
+
+# The sysroot wrappers should not be enabled while emerging
+# virtual/libc above because we need the headers first.
+set-sysroot
+
+# Install GCC early because otherwise it will be possible to build but
+# not link against libraries that use C++ such as ICU.
+echo; einfo "Emerging sys-devel/gcc ..."
+cross-emerge -uv1 sys-devel/gcc || die "Unable to emerge sys-devel/gcc."
+
+# texinfo 5+ requires Perl. This impacts virtual/man too.
+echo; einfo "Emerging @system (excluding reverse deps of dev-lang/perl) ..."
+cross-emerge -uv --exclude sys-apps/texinfo --exclude sys-apps/man-pages --exclude virtual/man @system || die "Unable to emerge @system."
+
+echo; ebegin "Creating important directories"
+ROOT_PORTDIR=$(PORTDIR= portageq get_repo_path "${ROOT}" gentoo)
+ROOT_DISTDIR=$(DISTDIR= portageq envvar DISTDIR)
+ROOT_TMPDIR=$(PORTAGE_TMPDIR= portageq envvar PORTAGE_TMPDIR)
+mkdir -p "${ROOT}"{/dev,/proc,/sys,/root,${ROOT_PORTDIR},${ROOT_DISTDIR},${ROOT_TMPDIR}} || die
+chmod 700 "${ROOT}/root" || die
+eend 0
+
+# perlcross will hopefully work!
+einfo "Emerging remainder of @system ..."
+cross-emerge -uv @system || die "Unable to emerge remainder of @system. Don't worry, you're only missing man."
+
+echo; einfo "Stage complete! :-)"
