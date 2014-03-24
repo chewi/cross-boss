@@ -34,7 +34,7 @@ if eclass_function eutils epatch_user; then
 	fi
 fi
 
-if [[ -n "${CS_SYSROOT}" && "${ROOT}" != "/" ]]; then
+if [[ -n "${CB_SYSROOT}" && "${ROOT}" != "/" ]]; then
 	# Some minimalistic trickery to cross-compile Perl modules. Sadly
 	# still needs QEMU for the configure phase. :(
 	if eclass_function perl-module perl-module_src_compile; then
@@ -68,7 +68,7 @@ if [[ -n "${CS_SYSROOT}" && "${ROOT}" != "/" ]]; then
 
 		perl() {
 			# Run perl through proot/QEMU.
-			"${CROSS_STAGE}/bin/cb-proot" "${ROOT}" perl "${@}"
+			"${CROSS_BOSS}/bin/cb-proot" "${ROOT}" perl "${@}"
 		}
 	fi
 
@@ -158,8 +158,8 @@ if [[ -n "${CS_SYSROOT}" && "${ROOT}" != "/" ]]; then
 	fi
 fi
 
-if [[ -z "${CS_BASHRC}" ]]; then
-	if [[ -n "${CS_SYSROOT}" && "${ROOT}" != "/" ]]; then
+if [[ -z "${CB_BASHRC}" ]]; then
+	if [[ -n "${CB_SYSROOT}" && "${ROOT}" != "/" ]]; then
 		extra_econf_sysroot() {
 			if grep -qsF lt_sysroot configure; then
 				EXTRA_ECONF="${EXTRA_ECONF} --with-sysroot=${ROOT}"
@@ -202,5 +202,5 @@ if [[ -z "${CS_BASHRC}" ]]; then
 	fi
 
 	# Only run once.
-	CS_BASHRC=1
+	CB_BASHRC=1
 fi

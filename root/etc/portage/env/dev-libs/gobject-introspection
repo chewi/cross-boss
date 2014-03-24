@@ -20,8 +20,8 @@ src_prepare() {
 src_compile() {
 	if [[ "${ROOT}" != "/" ]]; then
 		emake \
-			INTROSPECTION_COMPILER="env PATH=.libs:\$(PATH) ${CROSS_STAGE}/bin/cb-proot ${ROOT} ${S}/g-ir-compiler" \
-			INTROSPECTION_SCANNER="env PATH=.libs:\$(PATH) LPATH=.libs CC=\$(CC) PYTHONPATH=${S} UNINSTALLED_INTROSPECTION_SRCDIR=${S} UNINSTALLED_INTROSPECTION_BUILDDIR=${S} ${CROSS_STAGE}/bin/cb-proot ${ROOT} ${S}/g-ir-scanner"
+			INTROSPECTION_COMPILER="env PATH=.libs:\$(PATH) ${CROSS_BOSS}/bin/cb-proot ${ROOT} ${S}/g-ir-compiler" \
+			INTROSPECTION_SCANNER="env PATH=.libs:\$(PATH) LPATH=.libs CC=\$(CC) PYTHONPATH=${S} UNINSTALLED_INTROSPECTION_SRCDIR=${S} UNINSTALLED_INTROSPECTION_BUILDDIR=${S} ${CROSS_BOSS}/bin/cb-proot ${ROOT} ${S}/g-ir-scanner"
 	else
 		emake
 	fi

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export CROSS_STAGE=$(dirname $(dirname $(readlink -f "$0")))
-source "${CROSS_STAGE}/scripts/common.sh"
+export CROSS_BOSS=$(dirname $(dirname $(readlink -f "$0")))
+source "${CROSS_BOSS}/scripts/common.sh"
 export-env
 
 einfo "Emerging virtual/os-headers ..."

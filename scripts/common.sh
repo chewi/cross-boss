@@ -28,7 +28,7 @@ on-exit() {
 }
 
 cb-git() {
-	git --git-dir "${CROSS_STAGE}/.git" --work-tree "${CROSS_STAGE}" "${@}"
+	git --git-dir "${CROSS_BOSS}/.git" --work-tree "${CROSS_BOSS}" "${@}"
 }
 
 export-env() {
@@ -39,13 +39,13 @@ export-env() {
 set-sysroot() {
 	# This is used by our wrapper scripts. Don't rely on ROOT or
 	# SYSROOT. Qt resets SYSROOT, for example.
-	export CS_SYSROOT="${ROOT}"
+	export CB_SYSROOT="${ROOT}"
 
 	# cross-emerge sets this, for cross-pkg-config?
 	export SYSROOT="${ROOT}"
 
 	# This effectively enables our wrapper scripts, which need
-	# CS_SYSROOT to be set.
+	# CB_SYSROOT to be set.
 	export PREROOTPATH
 }
 
@@ -62,8 +62,8 @@ MAKEOPTS=$(portageq envvar MAKEOPTS)
 
 ROOT="${1%/}"
 PORTAGE_CONFIGROOT="${ROOT}"
-PORTDIR_OVERLAY="${PORTDIR_OVERLAY} '${CROSS_STAGE}/overlay'"
-CONFIG_SITE="${CROSS_STAGE}/scripts/config.site"
+PORTDIR_OVERLAY="${PORTDIR_OVERLAY} '${CROSS_BOSS}/overlay'"
+CONFIG_SITE="${CROSS_BOSS}/scripts/config.site"
 PREROOTPATH="${ROOT}/usr/lib/cross-boss/bin"
 
 if [[ -z "${ROOT}" ]]; then
@@ -83,12 +83,12 @@ unset CFG_EXCLUDE
 [[ "${0##*/}" = cb-emerge-proot ]] && CFG_EXCLUDE="${CFG_EXCLUDE} --exclude=*/cross-boss"
 
 ebegin "Copying cross-boss files"
-rsync -rltDmx --chmod=ugo=rwX ${CFG_EXCLUDE} "${CROSS_STAGE}/root/" "${ROOT}/" || die
+rsync -rltDmx --chmod=ugo=rwX ${CFG_EXCLUDE} "${CROSS_BOSS}/root/" "${ROOT}/" || die
 eend 0
 
 ebegin "Removing obsolete cross-boss files"
 COMMIT=`cat "${ROOT}/.cross-boss-commit" 2> /dev/null`
-cb-git diff --name-only --diff-filter=D ${COMMIT} "${CROSS_STAGE}/root" | sed "s:^root/:${ROOT}/:" | xargs rm -f || die
+cb-git diff --name-only --diff-filter=D ${COMMIT} "${CROSS_BOSS}/root" | sed "s:^root/:${ROOT}/:" | xargs rm -f || die
 eend 0
 
 ebegin "Recording cross-boss commit"
@@ -113,24 +113,24 @@ mkdir -p "${PREROOTPATH}" || die
 rm -f "${PREROOTPATH}"/*
 
 for TOOL in c++ cpp g++ gcc ld; do
-	ln -snf "${CROSS_STAGE}/scripts/sysroot-wrapper" "${PREROOTPATH}/${HOST}-${TOOL}" || die
+	ln -snf "${CROSS_BOSS}/scripts/sysroot-wrapper" "${PREROOTPATH}/${HOST}-${TOOL}" || die
 done
 
 for TOOL in compiler generate scanner; do
-	ln -snf "${CROSS_STAGE}/bin/cb-proot" "${PREROOTPATH}/g-ir-${TOOL}" || die
+	ln -snf "${CROSS_BOSS}/bin/cb-proot" "${PREROOTPATH}/g-ir-${TOOL}" || die
 done
 
 for CONFIG in ksba libassuan pth; do
-    ln -snf "${CROSS_STAGE}/scripts/config-wrapper" "${PREROOTPATH}/${CONFIG}-config" || die
+    ln -snf "${CROSS_BOSS}/scripts/config-wrapper" "${PREROOTPATH}/${CONFIG}-config" || die
 done
 
-ln -snf "${CROSS_STAGE}/scripts/guile-config" "${PREROOTPATH}/guile-config" || die
-ln -snf "${CROSS_STAGE}/scripts/pkg-config" "${PREROOTPATH}/${HOST}-pkg-config" || die
-ln -snf "${CROSS_STAGE}/scripts/ldconfig" "${PREROOTPATH}/${HOST}-ldconfig" || die
+ln -snf "${CROSS_BOSS}/scripts/guile-config" "${PREROOTPATH}/guile-config" || die
+ln -snf "${CROSS_BOSS}/scripts/pkg-config" "${PREROOTPATH}/${HOST}-pkg-config" || die
+ln -snf "${CROSS_BOSS}/scripts/ldconfig" "${PREROOTPATH}/${HOST}-ldconfig" || die
 eend 0
 
 ebegin "Refreshing cross-boss overlay"
-pushd "${CROSS_STAGE}/overlay" &> /dev/null || die
+pushd "${CROSS_BOSS}/overlay" &> /dev/null || die
 find -type l -delete || die
 
 for PKG in *-*/*; do

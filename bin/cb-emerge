@@ -6,5 +6,5 @@ export-env
 set-sysroot
 
 shift
-CROSS_CMD="ebuild" "${HOST}-emerge" "${@}"
+cross-emerge "${@}"
 echo

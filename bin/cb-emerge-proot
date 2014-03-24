@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export CROSS_STAGE=$(dirname $(dirname $(readlink -f "$0")))
-source "${CROSS_STAGE}/scripts/common.sh"
+export CROSS_BOSS=$(dirname $(dirname $(readlink -f "$0")))
+source "${CROSS_BOSS}/scripts/common.sh"
 
 export MAKEOPTS=$(portageq envvar MAKEOPTS)
 QEMU=$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar PORTAGE_EMULATOR)
@@ -23,7 +23,7 @@ if [[ -e "/usr/bin/distcc" ]]; then
 	done
 
 	for TOOL in c++ g++ gcc cc; do
-		ln -snf "/host-rootfs${CROSS_STAGE}/scripts/distcc-wrapper" "${DIR}/${TOOL}" || die
+		ln -snf "/host-rootfs${CROSS_BOSS}/scripts/distcc-wrapper" "${DIR}/${TOOL}" || die
 	done
 	eend 0
 
@@ -32,7 +32,7 @@ if [[ -e "/usr/bin/distcc" ]]; then
 
 	ebegin "Starting distccd on port ${DISTCCD_PORT}"
 	PATH="${ROOT}/usr/lib/cross-boss/bin" \
-	CS_SYSROOT="${ROOT}" \
+	CB_SYSROOT="${ROOT}" \
 	/usr/bin/distccd \
 		--daemon --no-detach --user distcc \
 		--listen 127.0.0.1 -a 127.0.0.1 -p "${DISTCCD_PORT}" &

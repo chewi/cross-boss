@@ -7,7 +7,7 @@
 # instead. Hacky but more accurate.
 
 STRINGS="${CHOST}-strings"
-LIB="${CS_SYSROOT}usr/lib/libguile.so"
+LIB="${CB_SYSROOT}usr/lib/libguile.so"
 
 case "$1" in
 	link)
