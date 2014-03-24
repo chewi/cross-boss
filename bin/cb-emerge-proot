@@ -25,6 +25,9 @@ if [[ -e "/usr/bin/distcc" ]]; then
 	for TOOL in c++ g++ gcc cc; do
 		ln -snf "/host-rootfs${CROSS_BOSS}/scripts/distcc-wrapper" "${DIR}/${TOOL}" || die
 	done
+
+	# Portage won't activate distcc without this.
+	mkdir -p "${ROOT}/usr/lib/distcc/bin"
 	eend 0
 
 	[[ -z "${DISTCCD_PORT}" ]] && DISTCCD_PORT=3634
