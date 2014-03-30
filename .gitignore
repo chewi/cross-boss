@@ -1,5 +1,6 @@
 /overlay/*/*/*.ebuild
 /overlay/*/*/files
 /overlay/*/*/Manifest
+/overlay/*/*/ManifestManifest
 /root/etc/portage/make.conf
 /root/etc/portage/make.profile

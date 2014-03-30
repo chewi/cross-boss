@@ -131,38 +131,65 @@ eend 0
 
 ebegin "Refreshing cross-boss overlay"
 pushd "${CROSS_BOSS}/overlay" &> /dev/null || die
-find -type l -delete || die
 
 for PKG in *-*/*; do
+	FILES=$(find "${PKG}/" -name "ebuild*.sh" -o \( -name "*.ebuild" -type f \))
+
+	# Prune dead packages.
+	if [[ -z "${FILES}" ]]; then
+		rm -r "${PKG}/" || die
+		continue
+	fi
+
+	# Create files symlink if necessary.
 	if [[ -d "${PORTDIR}/${PKG}/files" && ( -L "${PKG}/files" || ! -d "${PKG}/files" ) ]]; then
 		ln -snf "${PORTDIR}/${PKG}/files" "${PKG}/" || die
 	fi
 
+	FILES=$(find "${PKG}/" -type f -newer "${PKG}/ManifestManifest")
+
+	# Skip packages that are already up-to-date.
+	if [[ -z "${FILES}" ]] && sha512sum --status -c "${PKG}/ManifestManifest" 2> /dev/null; then
+		continue
+	fi
+
+	# Copy Manifest from Portage tree to avoid downloading sources.
 	cp -f "${PORTDIR}/${PKG}/Manifest" "${PKG}/" || die
 
+	# Delete existing symlinks. They will be recreated.
+	find "${PKG}/" -type l -delete || die
+
+	# Iterate over each ebuild.sh.
 	for EBSH in "${PKG}"/ebuild*.sh; do
 		EBSH_BASE="${EBSH##*/}"
 		EBSH_SLOT="${EBSH_BASE#ebuild}"
 		EBSH_SLOT="${EBSH_SLOT%.sh}"
 		EBSH_SLOT="${EBSH_SLOT#:}"
 
+		# Iterate over each version in the Portage tree.
 		for EB in "${PORTDIR}/${PKG}"/*.ebuild; do
 			EB_BASE="${EB##*/}"
 
+			# Do slot check if necessary.
 			if [[ -n "${EBSH_SLOT}" ]]; then
 				EB_PF="${EB_BASE%.ebuild}"
 				EB_SLOT=$(portageq metadata / ebuild "${PKG%%/*}/${EB_PF}" SLOT)
 
+				# Skip if the slot doesn't match.
 				if [[ "${EBSH_SLOT}" != "${EB_SLOT%%/*}" ]]; then
 					continue
 				fi
 			fi
 
+			# Point the ebuild filename to ebuild.sh.
 			ln -snf "${EBSH_BASE}" "${PKG}/${EB_BASE}" || die
 		done
 	done
 
+	# Remanifestmanifestmanifest!
+	rm -f "${PKG}/ManifestManifest" || die
 	ebuild $(ls "${PKG}"/*.ebuild | tail -n1) manifest &> /dev/null || die
+	sha512sum "${PORTDIR}/${PKG}/Manifest" $(find "${PKG}/" -type f) > "${PKG}/ManifestManifest" || die
 done
 
 popd &> /dev/null || die
