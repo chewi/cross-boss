@@ -12,7 +12,6 @@ set -- emerge "${@}"
 
 if [[ -e "/usr/bin/distcc" ]]; then
 	DIR="${ROOT}/usr/lib/cross-boss/distcc"
-	PUMP="pump"
 
 	ebegin "Recreating distcc symlinks"
 	mkdir -p "${DIR}" || die
@@ -45,13 +44,12 @@ if [[ -e "/usr/bin/distcc" ]]; then
 
 	export \
 		FEATURES="${FEATURES} distcc" \
-		DISTCC_HOSTS="127.0.0.1:${DISTCCD_PORT}/${JOBS},cpp,lzo"
+		DISTCC_HOSTS="127.0.0.1:${DISTCCD_PORT}/${JOBS}"
 else
 	ewarn "Please emerge distcc to get a speed boost!"
-	unset pump
 fi
 
-${PUMP} proot -R "${ROOT}" -b . \
+proot -R "${ROOT}" -b . \
 	-b "$(portageq get_repo_path / gentoo):$(portageq get_repo_path "${ROOT}" gentoo)" \
 	-b "$(portageq envvar DISTDIR):$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar DISTDIR)" \
 	-b "$(portageq envvar PORTAGE_TMPDIR):$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar PORTAGE_TMPDIR)" \
