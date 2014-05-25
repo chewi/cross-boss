@@ -141,12 +141,7 @@ for PKG in *-*/*; do
 		continue
 	fi
 
-	# Create files symlink if necessary.
-	if [[ -d "${PORTDIR}/${PKG}/files" && ( -L "${PKG}/files" || ! -d "${PKG}/files" ) ]]; then
-		ln -snf "${PORTDIR}/${PKG}/files" "${PKG}/" || die
-	fi
-
-	FILES=$(find "${PKG}/" -type f -newer "${PKG}/ManifestManifest")
+	FILES=$(find "${PKG}/" -type f -newer "${PKG}/ManifestManifest" 2> /dev/null)
 
 	# Skip packages that are already up-to-date.
 	if [[ -z "${FILES}" ]] && sha512sum --status -c "${PKG}/ManifestManifest" 2> /dev/null; then
@@ -158,6 +153,11 @@ for PKG in *-*/*; do
 
 	# Delete existing symlinks. They will be recreated.
 	find "${PKG}/" -type l -delete || die
+
+	# Create files symlink if necessary.
+	if [[ -d "${PORTDIR}/${PKG}/files" && ! -d "${PKG}/files" ]]; then
+		ln -snf "${PORTDIR}/${PKG}/files" "${PKG}/" || die
+	fi
 
 	# Iterate over each ebuild.sh.
 	for EBSH in "${PKG}"/ebuild*.sh; do
