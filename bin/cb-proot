@@ -22,6 +22,9 @@ QEMU=$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar PORTAGE_EMULATOR)
 set -- "${ARG0}" "${@}"
 [ -n "${QEMU}" ] && set -- -q "${QEMU%% *}" "${@}"
 
+# https://github.com/cedric-vincent/PRoot/issues/55
+export LD_LIBRARY_PATH="$(gcc-config -L)"
+
 exec proot -R "${ROOT}" -b . \
 	-b "$(portageq get_repo_path / gentoo):$(portageq get_repo_path "${ROOT}" gentoo)" \
 	-b "$(portageq envvar DISTDIR):$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar DISTDIR)" \
