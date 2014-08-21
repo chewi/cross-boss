@@ -22,7 +22,7 @@ if [[ -n "${CROSS_VER}" ]]; then
 	eval "
 	src_prepare() {
 		$(function_body src_prepare)
-		echo \"exec ./configure \\\"\\\${@/-des}\\\" --target=\${CHOST} -Dinstallprefix='' -Dinstallusrbinperl='undef'\" -Dusevendorprefix='define' > Configure || die
+		echo \"exec ./configure \\\"\\\${@/-des}\\\" --target=\${CHOST} -Dinstallprefix='' -Dinstallusrbinperl='undef' -Dusevendorprefix='define'\" > Configure || die
 
 		if use gdbm; then
 			sed -i 's:INC => .*:INC => \"-I${EROOT}usr/include/gdbm\":g' ext/NDBM_File/Makefile.PL || die
