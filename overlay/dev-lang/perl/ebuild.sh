@@ -5,6 +5,7 @@ source "${PORTDIR}/${CATEGORY}/${PN}/${BASH_SOURCE[0]##*/}"
 EAPI=5
 
 case "${PV}" in
+5.20.0) CROSS_VER=0.9 ;;
 5.18.2) CROSS_VER=0.8.5 ;;
 5.18.1) CROSS_VER=0.8.3 ;;
 5.16.3) CROSS_VER=0.7.4 ;;
