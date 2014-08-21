@@ -3,7 +3,7 @@
 export CROSS_BOSS=$(dirname $(dirname $(readlink -f "$0")))
 source "${CROSS_BOSS}/scripts/common.sh"
 
-export MAKEOPTS=$(portageq envvar MAKEOPTS)
+export MAKEOPTS=$(env -u ROOT -u PORTAGE_CONFIGROOT portageq envvar MAKEOPTS)
 QEMU=$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar PORTAGE_EMULATOR)
 
 shift 1
@@ -50,10 +50,10 @@ else
 fi
 
 # https://github.com/cedric-vincent/PRoot/issues/55
-export LD_LIBRARY_PATH="$(gcc-config -L)"
+export LD_LIBRARY_PATH="$(env -u ROOT -u PORTAGE_CONFIGROOT -u CHOST gcc-config -L)"
 
 proot -R "${ROOT}" -b . \
-	-b "$(portageq get_repo_path / gentoo):$(portageq get_repo_path "${ROOT}" gentoo)" \
-	-b "$(portageq envvar DISTDIR):$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar DISTDIR)" \
-	-b "$(portageq envvar PORTAGE_TMPDIR):$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar PORTAGE_TMPDIR)" \
+	-b "$(env -u ROOT -u PORTAGE_CONFIGROOT portageq get_repo_path / gentoo):$(portageq get_repo_path "${ROOT}" gentoo)" \
+	-b "$(env -u ROOT -u PORTAGE_CONFIGROOT portageq envvar DISTDIR):$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar DISTDIR)" \
+	-b "$(env -u ROOT -u PORTAGE_CONFIGROOT portageq envvar PORTAGE_TMPDIR):$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar PORTAGE_TMPDIR)" \
 	"${@}"
