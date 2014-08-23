@@ -11,7 +11,7 @@ set -- emerge "${@}"
 [[ -n "${QEMU}" ]] && set -- -q "${QEMU%% *}" "${@}"
 
 if [[ -e "/usr/bin/distcc" ]]; then
-	DIR="${ROOT}/usr/lib/cross-boss/distcc"
+	DIR="${ROOT}/usr/libexec/cross-boss/distcc"
 
 	ebegin "Recreating distcc symlinks"
 	mkdir -p "${DIR}" || die
@@ -26,14 +26,16 @@ if [[ -e "/usr/bin/distcc" ]]; then
 	done
 
 	# Portage won't activate distcc without this.
-	mkdir -p "${ROOT}/usr/lib/distcc/bin"
+	ARCH=$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar ARCH)
+	LIBDIR=$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar "LIBDIR_${ARCH}")
+	mkdir -p "${ROOT}/usr/${LIBDIR}/distcc/bin"
 	eend 0
 
 	[[ -z "${DISTCCD_PORT}" ]] && DISTCCD_PORT=3634
 	JOBS=$(echo "${MAKEOPTS}" | grep -P -o "(?<=-j)\d" || echo 2)
 
 	ebegin "Starting distccd on port ${DISTCCD_PORT}"
-	PATH="${ROOT}/usr/lib/cross-boss/bin" \
+	PATH="${ROOT}/usr/libexec/cross-boss/bin" \
 	CB_SYSROOT="${ROOT}" \
 	/usr/bin/distccd \
 		--daemon --no-detach --user distcc \

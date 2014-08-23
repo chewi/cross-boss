@@ -4,14 +4,20 @@ export CROSS_BOSS=$(dirname $(dirname $(readlink -f "$0")))
 source "${CROSS_BOSS}/scripts/common.sh"
 export-env
 
+# Needed to set up multilib.
+einfo "Emerging sys-apps/baselayout ..."
+cross-emerge -uv1 sys-apps/baselayout || die "Unable to emerge sys-apps/baselayout."
+
+# Needed by sys-libs/timezone-data.
 einfo "Emerging virtual/os-headers ..."
 cross-emerge -uv1 virtual/os-headers || die "Unable to emerge virtual/os-headers."
 
+# Needed by just about everything. :)
 echo; einfo "Emerging virtual/libc ..."
 cross-emerge -uv1 virtual/libc || die "Unable to emerge virtual/libc."
 
 # The sysroot wrappers should not be enabled while emerging
-# virtual/libc above because we need the headers first.
+# sys-libs/timezone-data because we need the libc headers first.
 set-sysroot
 
 # Install GCC early because otherwise it will be possible to build but

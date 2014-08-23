@@ -198,7 +198,7 @@ if [[ -z "${CB_BASHRC}" ]]; then
 			}
 		fi
 	elif [[ -e "/host-rootfs/usr/bin/distcc" ]] && [[ "${FEATURES}" = *distcc* ]]; then
-		PATH="${PATH//\/distcc\/bin//cross-boss/distcc}"
+		PATH="${PATH//lib*\/distcc\/bin/libexec/cross-boss/distcc}"
 	fi
 
 	# Only run once.

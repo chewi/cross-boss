@@ -64,7 +64,7 @@ ROOT="${1%/}"
 PORTAGE_CONFIGROOT="${ROOT}"
 PORTDIR_OVERLAY="${PORTDIR_OVERLAY} '${CROSS_BOSS}/overlay'"
 CONFIG_SITE="${CROSS_BOSS}/scripts/config.site"
-PREROOTPATH="${ROOT}/usr/lib/cross-boss/bin"
+PREROOTPATH="${ROOT}/usr/libexec/cross-boss/bin"
 
 if [[ -z "${ROOT}" ]]; then
 	eerror "Please specify a target directory."
