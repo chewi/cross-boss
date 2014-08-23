@@ -25,6 +25,10 @@ src_prepare() {
 			fi
 		fi
 
+		if ! lock-obj "${TRIPLET}"; then
+			TRIPLET="$(echo ${TRIPLET} | sed -r 's/^([^-]*)-[^-]*-([^-]*-[^-]*)$/\1-unknown-\2/')"
+		fi
+
 		if lock-obj "${TRIPLET}"; then
 			ln -s "lock-obj-pub.${TRIPLET}.h" "src/syscfg/lock-obj-pub.${CHOST}.h" || die
 		fi
