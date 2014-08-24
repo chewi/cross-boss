@@ -1,0 +1,33 @@
+From 355196cb52080353738ee95bede7f96e61731b26 Mon Sep 17 00:00:00 2001
+From: James Le Cuirot <chewi@aura-online.co.uk>
+Date: Sun, 24 Aug 2014 12:08:13 +0100
+Subject: [PATCH 1/2] Allow variables in the libperl Makefile snippet
+
+This makes it easier to add an soname flag, if desired.
+---
+ Makefile.config.SH | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/Makefile.config.SH b/Makefile.config.SH
+index a815f1d..a4e2936 100755
+--- a/Makefile.config.SH
++++ b/Makefile.config.SH
+@@ -135,11 +135,11 @@ LIBPERL = $libperl
+ END
+ 
+ if [ "$useshrplib" == 'define' ]; then
+-cat >> Makefile.config <<"END"
+-LIBPERL_LINK = -Wl,-rpath,$(archlib)/CORE $(LIBPERL)
++cat >> Makefile.config <<END
++LIBPERL_LINK = -Wl,-rpath,\$(archlib)/CORE \$(LIBPERL)
+ 
+-$(LIBPERL):
+-	$(CC) $(LDDLFLAGS) -o $@ $(filter %$o,$^) $(LIBS)
++\$(LIBPERL):
++	\$(CC) \$(LDDLFLAGS) -o \$@ \$(filter %\$o,\$^) \$(LIBS)
+ END
+ else
+ cat >> Makefile.config <<"END"
+-- 
+2.0.4
+

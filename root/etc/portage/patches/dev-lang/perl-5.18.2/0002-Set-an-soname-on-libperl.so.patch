@@ -1,0 +1,28 @@
+From cefec61af1f1569338bc895b2348b3e1455755b4 Mon Sep 17 00:00:00 2001
+From: James Le Cuirot <chewi@aura-online.co.uk>
+Date: Sun, 24 Aug 2014 12:09:44 +0100
+Subject: [PATCH 2/2] Set an soname on libperl.so
+
+This is considered good practise and as such is required by
+Gentoo. Changing the soname is dangerous but setting one where there
+wasn't one previously should be harmless.
+---
+ Makefile.config.SH | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile.config.SH b/Makefile.config.SH
+index a4e2936..95a8b55 100755
+--- a/Makefile.config.SH
++++ b/Makefile.config.SH
+@@ -139,7 +139,7 @@ cat >> Makefile.config <<END
+ LIBPERL_LINK = -Wl,-rpath,\$(archlib)/CORE \$(LIBPERL)
+ 
+ \$(LIBPERL):
+-	\$(CC) \$(LDDLFLAGS) -o \$@ \$(filter %\$o,\$^) \$(LIBS)
++	\$(CC) \$(LDDLFLAGS) -Wl,-soname -Wl,libperl.so.${PERL_REVISION}.${PERL_VERSION} -o \$@ \$(filter %\$o,\$^) \$(LIBS)
+ END
+ else
+ cat >> Makefile.config <<"END"
+-- 
+2.0.4
+

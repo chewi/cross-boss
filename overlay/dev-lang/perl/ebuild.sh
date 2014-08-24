@@ -7,13 +7,7 @@ EAPI=5
 case "${PV}" in
 5.20.0) CROSS_VER=0.9 ;;
 5.18.2) CROSS_VER=0.8.5 ;;
-5.18.1) CROSS_VER=0.8.3 ;;
 5.16.3) CROSS_VER=0.7.4 ;;
-# Following versions need fixing!
-5.16.0) CROSS_VER=0.7.1 ;;
-5.14.2) CROSS_VER=0.6.5 ;;
-5.14.1) CROSS_VER=0.6.2 ;;
-5.12.3) CROSS_VER=0.5   ;;
 esac
 
 if [[ -n "${CROSS_VER}" ]]; then
