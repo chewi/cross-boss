@@ -6,7 +6,7 @@ source /etc/init.d/functions.sh
 
 die() {
 	[[ -z "${1}" ]] && eend 1
-	eerror "Error on line ${BASH_LINENO[0]} of cross-boss! ${1}"
+	eerror "Error on line ${BASH_LINENO[0]} of ${BASH_SOURCE[1]}! ${1}"
 	exit 1
 }
 
