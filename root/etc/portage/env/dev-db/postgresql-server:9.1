@@ -1,0 +1,30 @@
+# Gentoo bug #505540.
+
+src_configure() {
+	case ${CHOST} in
+		*-darwin*|*-solaris*)
+			use nls && append-libs intl
+			;;
+	esac
+
+	local PO="${EROOT%/}"
+	local PG_CONFIG="${PO}/usr/$(get_libdir)/postgresql-${SLOT}/bin/pg_config"
+
+	if [[ ${CBUILD:-${CHOST}} != ${CHOST} ]]; then
+		PGC_CONF="$(${CHOST}-strings ${PG_CONFIG} | grep -F "'--prefix=")"
+	else
+		PGC_CONF="$(${PG_CONFIG} --configure)"
+	fi
+
+	# eval is needed to get along with pg_config quotation of space-rich entities.
+	eval econf "${PGC_CONF}" \
+		$(use_with perl) \
+		$(use_with tcl) \
+		$(use_with xml libxml) \
+		$(use_with xml libxslt) \
+		$(use_with uuid ossp-uuid) \
+		--with-system-tzdata="${PO}/usr/share/zoneinfo" \
+		--with-includes="${PO}/usr/include/postgresql-${SLOT}/" \
+		--with-libraries="${PO}/usr/$(get_libdir)/postgresql-${SLOT}/$(get_libdir)" \
+		"$(use_enable nls nls "$(wanted_languages)")"
+}
