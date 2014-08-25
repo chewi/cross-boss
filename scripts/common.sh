@@ -120,7 +120,7 @@ for TOOL in compiler generate scanner; do
 	ln -snf "${CROSS_BOSS}/bin/cb-proot" "${PREROOTPATH}/g-ir-${TOOL}" || die
 done
 
-for CONFIG in ksba libassuan pth; do
+for CONFIG in ksba libassuan pth xml2 xslt; do
     ln -snf "${CROSS_BOSS}/scripts/config-wrapper" "${PREROOTPATH}/${CONFIG}-config" || die
 done
 

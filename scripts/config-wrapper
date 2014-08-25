@@ -1,4 +1,4 @@
 #!/bin/sh
 
-# Strip harmful flags from *-config.
-"${ROOT:-/}usr/bin/${0##*/}" "${@}" | sed -r "s/-[IL][^ ]*//g"
+# Prepend = (sysroot) to any -I or -L flags.
+"${ROOT:-/}usr/bin/${0##*/}" "${@}" | sed "s/\(-[IL]\)\([^=]\)/\1=\2/g"
