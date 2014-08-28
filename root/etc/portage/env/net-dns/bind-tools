@@ -1,0 +1,4 @@
+# Doesn't configure without this, not sure if it should be yes all the
+# time so no bug report yet.
+
+export with_ecdsa=yes
