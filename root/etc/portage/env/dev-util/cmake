@@ -24,24 +24,21 @@ cmake_src_bootstrap() {
 }
 
 src_configure() {
-	# make things work with gentoo java setup
-	# in case java-config cannot be run, the variable just becomes unset
-	# per bug #315229
-	export JAVA_HOME=$(java-config -g JAVA_HOME 2> /dev/null)
-
 	local mycmakeargs=(
 		-DCMAKE_USE_SYSTEM_LIBRARIES=ON
 		-DCMAKE_INSTALL_PREFIX="${EPREFIX}"/usr
 		-DCMAKE_DOC_DIR=/share/doc/${PF}
 		-DCMAKE_MAN_DIR=/share/man
 		-DCMAKE_DATA_DIR=/share/${PN}
+		-DSPHINX_MAN=$(usex doc)
+		-DSPHINX_HTML=$(usex doc)
 		$(cmake-utils_use_build ncurses CursesDialog)
 	)
 
 	if tc-is-cross-compiler ; then
 		mycmakeargs+=(-DKWSYS_LFS_WORKS=1)
 
-		if use arm || use ppc ; then
+		if $(tc-getCC "$@") ${CFLAGS} -dM -E - < /dev/null | grep -Fxq "#define __CHAR_UNSIGNED__ 1" ; then
 			mycmakeargs+=(-DKWSYS_CHAR_IS_SIGNED=0)
 		else
 			mycmakeargs+=(-DKWSYS_CHAR_IS_SIGNED=1)
@@ -54,5 +51,6 @@ src_configure() {
 			$(cmake-utils_use_find_package qt5 Qt5Widgets)
 		)
 	fi
+
 	cmake-utils_src_configure
 }
