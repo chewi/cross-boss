@@ -82,39 +82,6 @@ if [[ -n "${CB_SYSROOT}" && "${ROOT}" != "/" ]]; then
 		}"
 	fi
 
-	# Enable cross-compiling under CMake. This is a nasty way to
-	# splice the code in but it's better than copying the whole
-	# function. I hope they merge this soon. :( Gentoo bug #503216.
-	if eclass_function cmake-utils enable_cmake-utils_src_configure; then
-		eval "
-		enable_cmake-utils_src_configure() {
-			$(function_body enable_cmake-utils_src_configure | sed 's:local cmakeargs=:\
-			if tc-is-cross-compiler; then\
-				local sysname\
-				case \"\${KERNEL}\" in\
-					Cygwin) sysname=\"CYGWIN_NT-5.1\" ;;\
-					HPUX) sysname=\"HP-UX\" ;;\
-					linux) sysname=\"Linux\" ;;\
-					Winnt) sysname=\"Windows\" ;;\
-					*) sysname=\"\${KERNEL}\" ;;\
-				esac\
-\
-				local toolchain_file=\${BUILD_DIR}/toolchain_file.cmake\
-				cat > \"\${toolchain_file}\" <<- _EOF_\
-					SET (CMAKE_SYSTEM_NAME \"\${sysname}\")\
-					SET (CMAKE_C_COMPILER \$(type -P \$(tc-getCC)))\
-					SET (CMAKE_CXX_COMPILER \$(type -P \$(tc-getCXX)))\
-				_EOF_\
-\
-				mycmakeargs_local+=(\
-					-DCMAKE_TOOLCHAIN_FILE=\"\${toolchain_file}\"\
-				)\
-			fi\
-\
-			\0:')
-		}"
-	fi
-
 	# Enable cross-compiling under Waf. Gentoo bug #500090.
 	if eclass_function waf-utils waf-utils_src_configure; then
 		waf-utils_src_configure() {
