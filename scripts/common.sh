@@ -33,7 +33,7 @@ cb-git() {
 
 export-env() {
 	export PORTDIR DISTDIR PORTAGE_TMPDIR MAKEOPTS
-	export ROOT PORTAGE_CONFIGROOT PORTDIR_OVERLAY CONFIG_SITE
+	export ROOT PORTAGE_CONFIGROOT CONFIG_SITE
 }
 
 set-sysroot() {
@@ -62,7 +62,6 @@ MAKEOPTS=$(portageq envvar MAKEOPTS)
 
 ROOT="${1%/}"
 PORTAGE_CONFIGROOT="${ROOT}"
-PORTDIR_OVERLAY="${PORTDIR_OVERLAY} '${CROSS_BOSS}/overlay'"
 CONFIG_SITE="${CROSS_BOSS}/scripts/config.site"
 PREROOTPATH="${ROOT}/usr/libexec/cross-boss/bin"
 
@@ -127,70 +126,4 @@ done
 ln -snf "${CROSS_BOSS}/scripts/guile-config" "${PREROOTPATH}/guile-config" || die
 ln -snf "${CROSS_BOSS}/scripts/pkg-config" "${PREROOTPATH}/${HOST}-pkg-config" || die
 ln -snf "${CROSS_BOSS}/scripts/ldconfig" "${PREROOTPATH}/${HOST}-ldconfig" || die
-eend 0
-
-ebegin "Refreshing cross-boss overlay"
-pushd "${CROSS_BOSS}/overlay" &> /dev/null || die
-
-for PKG in *-*/*; do
-	FILES=$(find "${PKG}/" -name "ebuild*.sh" -o \( -name "*.ebuild" -type f \))
-
-	# Prune dead packages.
-	if [[ -z "${FILES}" ]]; then
-		rm -r "${PKG}/" || die
-		continue
-	fi
-
-	FILES=$(find "${PKG}/" -type f -newer "${PKG}/ManifestManifest" 2> /dev/null)
-
-	# Skip packages that are already up-to-date.
-	if [[ -z "${FILES}" ]] && sha512sum --status -c "${PKG}/ManifestManifest" 2> /dev/null; then
-		continue
-	fi
-
-	# Copy Manifest from Portage tree to avoid downloading sources.
-	cp -f "${PORTDIR}/${PKG}/Manifest" "${PKG}/" || die
-
-	# Delete existing symlinks. They will be recreated.
-	find "${PKG}/" -type l -delete || die
-
-	# Create files symlink if necessary.
-	if [[ -d "${PORTDIR}/${PKG}/files" && ! -d "${PKG}/files" ]]; then
-		ln -snf "${PORTDIR}/${PKG}/files" "${PKG}/" || die
-	fi
-
-	# Iterate over each ebuild.sh.
-	for EBSH in "${PKG}"/ebuild*.sh; do
-		EBSH_BASE="${EBSH##*/}"
-		EBSH_SLOT="${EBSH_BASE#ebuild}"
-		EBSH_SLOT="${EBSH_SLOT%.sh}"
-		EBSH_SLOT="${EBSH_SLOT#:}"
-
-		# Iterate over each version in the Portage tree.
-		for EB in "${PORTDIR}/${PKG}"/*.ebuild; do
-			EB_BASE="${EB##*/}"
-
-			# Do slot check if necessary.
-			if [[ -n "${EBSH_SLOT}" ]]; then
-				EB_PF="${EB_BASE%.ebuild}"
-				EB_SLOT=$(portageq metadata / ebuild "${PKG%%/*}/${EB_PF}" SLOT)
-
-				# Skip if the slot doesn't match.
-				if [[ "${EBSH_SLOT}" != "${EB_SLOT%%/*}" ]]; then
-					continue
-				fi
-			fi
-
-			# Point the ebuild filename to ebuild.sh.
-			ln -snf "${EBSH_BASE}" "${PKG}/${EB_BASE}" || die
-		done
-	done
-
-	# Remanifestmanifestmanifest!
-	rm -f "${PKG}/ManifestManifest" || die
-	ebuild $(ls "${PKG}"/*.ebuild | tail -n1) manifest &> /dev/null || die
-	sha512sum "${PORTDIR}/${PKG}/Manifest" $(find "${PKG}/" -type f) > "${PKG}/ManifestManifest" || die
-done
-
-popd &> /dev/null || die
 eend 0
