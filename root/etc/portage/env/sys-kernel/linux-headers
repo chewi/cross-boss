@@ -1,4 +1,0 @@
-post_src_prepare() {
-	# https://lkml.org/lkml/2012/3/21/517
-	sed -i "s/mq_getsetaddr/mq_getsetattr/g" "${S}/arch/x86/syscalls/syscall_32.tbl" || die
-}
