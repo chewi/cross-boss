@@ -1,4 +1,0 @@
-->=dev-libs/glib-2.5
-->sys-fs/udev-141
-
-dev-libs/elfutils # Needs argp.h, use libelf instead.

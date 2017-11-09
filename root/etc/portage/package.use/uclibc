@@ -1,1 +1,0 @@
-sys-libs/uclibc ipv6 savedconfig # ipv6 is required by some packages.

@@ -78,7 +78,6 @@ eend 0
 trap on-exit EXIT || die
 
 unset CFG_EXCLUDE
-[[ "${HOST}" != *-uclibc ]] && CFG_EXCLUDE="${CFG_EXCLUDE} --exclude=*uclibc*"
 [[ "${0##*/}" = cb-emerge-proot ]] && CFG_EXCLUDE="${CFG_EXCLUDE} --exclude=*/cross-boss"
 
 ebegin "Copying cross-boss files"
