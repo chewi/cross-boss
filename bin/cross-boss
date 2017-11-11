@@ -25,9 +25,8 @@ set-sysroot
 echo; einfo "Emerging sys-devel/gcc ..."
 cross-emerge -uv1 sys-devel/gcc || die "Unable to emerge sys-devel/gcc."
 
-# texinfo 5+ requires Perl. This impacts virtual/man too.
-echo; einfo "Emerging @system (excluding reverse deps of dev-lang/perl) ..."
-cross-emerge -uv --exclude sys-apps/texinfo --exclude sys-apps/man-pages --exclude virtual/man @system || die "Unable to emerge @system."
+echo; einfo "Emerging @system ..."
+cross-emerge -uv @system || die "Unable to emerge @system."
 
 echo; ebegin "Creating important directories"
 ROOT_PORTDIR=$(PORTDIR= portageq get_repo_path "${ROOT}" gentoo)
@@ -36,9 +35,5 @@ ROOT_TMPDIR=$(PORTAGE_TMPDIR= portageq envvar PORTAGE_TMPDIR)
 mkdir -p "${ROOT}"{/dev,/proc,/sys,/root,${ROOT_PORTDIR},${ROOT_DISTDIR},${ROOT_TMPDIR}} || die
 chmod 700 "${ROOT}/root" || die
 eend 0
-
-# perlcross will hopefully work!
-einfo "Emerging remainder of @system ..."
-cross-emerge -uv @system || die "Unable to emerge remainder of @system. Don't worry, you're only missing man."
 
 echo; einfo "Stage complete! :-)"
