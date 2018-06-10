@@ -9,45 +9,46 @@
 # around the problem by checking if --prefix=/usr was given.
 
 if [ "${prefix}" == "/usr" ]; then
-	ac_cv_alignof_dbus_bool_t=${ac_cv_alignof_dbus_bool_t=4}
-	ac_cv_alignof_dbus_int16_t=${ac_cv_alignof_dbus_int16_t=2}
-	ac_cv_alignof_dbus_int32_t=${ac_cv_alignof_dbus_int32_t=4}
-	ac_cv_alignof_dbus_int64_t=${ac_cv_alignof_dbus_int64_t=8}
+	: ${ac_cv_alignof_dbus_bool_t=4}
+	: ${ac_cv_alignof_dbus_int16_t=2}
+	: ${ac_cv_alignof_dbus_int32_t=4}
+	: ${ac_cv_alignof_dbus_int64_t=8}
 
-	ac_cv_file__dev_ptc=${ac_cv_file__dev_ptc=no}
-	ac_cv_file__dev_ptmx=${ac_cv_file__dev_ptmx=yes}
-	ac_cv_file__proc_sys_kernel_core_pattern=${ac_cv_file__proc_sys_kernel_core_pattern=yes}
+	: ${ac_cv_file__dev_ptc=no}
+	: ${ac_cv_file__dev_ptmx=yes}
+	: ${ac_cv_file__proc_sys_kernel_core_pattern=yes}
+	: ${ac_cv_file__sys_class_tty_tty0_active=yes}
 
-	ac_cv_computed_gotos=${ac_cv_computed_gotos=yes}
-	ac_cv_func_regcomp=${ac_cv_func_regcomp=yes}
-	ac_cv_have_long_long_format=${ac_cv_have_long_long_format=yes}
-	ac_cv_printf_positional=${ac_cv_printf_positional=yes}
+	: ${ac_cv_computed_gotos=yes}
+	: ${ac_cv_func_regcomp=yes}
+	: ${ac_cv_have_long_long_format=yes}
+	: ${ac_cv_printf_positional=yes}
 
-	bash_cv_getcwd_malloc=${bash_cv_getcwd_malloc=yes}
-	bash_cv_job_control_missing=${bash_cv_job_control_missing=present}
+	: ${bash_cv_getcwd_malloc=yes}
+	: ${bash_cv_job_control_missing=present}
 
-	libreplace_cv_HAVE_GETADDRINFO=${libreplace_cv_HAVE_GETADDRINFO=no}
-	libreplace_cv_HAVE_SECURE_MKSTEMP=${libreplace_cv_HAVE_SECURE_MKSTEMP=yes}
+	: ${libreplace_cv_HAVE_GETADDRINFO=no}
+	: ${libreplace_cv_HAVE_SECURE_MKSTEMP=yes}
 
-	samba_cv_CC_NEGATIVE_ENUM_VALUES=${samba_cv_CC_NEGATIVE_ENUM_VALUES=yes}
-	samba_cv_USE_SETREUID=${samba_cv_USE_SETREUID=yes}
+	: ${samba_cv_CC_NEGATIVE_ENUM_VALUES=yes}
+	: ${samba_cv_USE_SETREUID=yes}
 
-	krb5_cv_attr_constructor_destructor=${krb5_cv_attr_constructor_destructor=yes,yes}
-	libopts_cv_with_libregex=${libopts_cv_with_libregex=yes}
-	ssh_cv_working_secp521r1=${ssh_cv_working_secp521r1=yes}
+	: ${krb5_cv_attr_constructor_destructor=yes,yes}
+	: ${libopts_cv_with_libregex=yes}
+	: ${ssh_cv_working_secp521r1=yes}
 
 	echo "$(basename $0): loading site script /usr/share/config.site"
 	source /usr/share/config.site
 
-	ac_cv_alignof_char=${ac_cv_alignof_char=${ac_cv_alignof_CORBA_char}}
-	ac_cv_alignof_double=${ac_cv_alignof_double=${ac_cv_alignof_CORBA_double}}
-	ac_cv_alignof_dbind_struct=${ac_cv_alignof_dbind_struct=${ac_cv_alignof_CORBA_struct}}
-	ac_cv_alignof_dbind_pointer=${ac_cv_alignof_dbind_pointer=${ac_cv_sizeof_long}}
+	: ${ac_cv_alignof_char=${ac_cv_alignof_CORBA_char}}
+	: ${ac_cv_alignof_double=${ac_cv_alignof_CORBA_double}}
+	: ${ac_cv_alignof_dbind_struct=${ac_cv_alignof_CORBA_struct}}
+	: ${ac_cv_alignof_dbind_pointer=${ac_cv_sizeof_long}}
 
-	ac_cv_func_va_copy=${ac_cv_func_va_copy=yes}
-	ac_cv_func___va_copy=${ac_cv_func___va_copy=yes}
+	: ${ac_cv_func_va_copy=yes}
+	: ${ac_cv_func___va_copy=yes}
 
-	lib_cv_va_copy=${lib_cv_va_copy=${ac_cv_func_va_copy}}
-	lib_cv___va_copy=${lib_cv___va_copy=${ac_cv_func___va_copy}}
-	lib_cv_va_val_copy=${lib_cv_va_val_copy=yes}
+	: ${lib_cv_va_copy=${ac_cv_func_va_copy}}
+	: ${lib_cv___va_copy=${ac_cv_func___va_copy}}
+	: ${lib_cv_va_val_copy=yes}
 fi
