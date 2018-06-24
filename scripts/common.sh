@@ -2,7 +2,7 @@
 umask 022
 
 # Give us some toys.
-source /etc/init.d/functions.sh
+source /lib/rc/sh/functions.sh
 
 die() {
 	[[ -z "${1}" ]] && eend 1
