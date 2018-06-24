@@ -2,7 +2,9 @@
 umask 022
 
 # Give us some toys.
+OLD_PATH=${PATH}
 source /lib/rc/sh/functions.sh
+PATH=${OLD_PATH}:${PATH}
 
 die() {
 	[[ -z "${1}" ]] && eend 1
