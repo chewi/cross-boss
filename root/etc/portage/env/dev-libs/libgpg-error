@@ -3,30 +3,26 @@
 # I'll refrain from filing a bug.
 
 lock-obj() {
-	[[ -f "src/syscfg/lock-obj-pub.$1.h" ]]
+	[[ -f src/syscfg/lock-obj-pub.$1.h ]]
 }
 
 src_prepare() {
-	epatch_user
+	default
 	elibtoolize
 
-	local TRIPLET="${CHOST}"
+	local TRIPLET=${CHOST}
 
 	if ! lock-obj "${TRIPLET}"; then
-		if [[ "${TRIPLET}" = *-hardfloat-*-* ]]; then
-			TRIPLET="${TRIPLET/hardfloat/unknown}hf"
-		elif [[ "${TRIPLET}" = *-softfloat-*-* ]]; then
-			TRIPLET="${TRIPLET/softfloat/unknown}"
-		fi
+		TRIPLET=${TRIPLET%hf}
 
 		if ! lock-obj "${TRIPLET}"; then
-			if [[ "${TRIPLET}" = arm* ]]; then
-				TRIPLET="arm-${TRIPLET#*-}"
+			if [[ ${TRIPLET} = arm* ]]; then
+				TRIPLET=arm-${TRIPLET#*-}
 			fi
 		fi
 
 		if ! lock-obj "${TRIPLET}"; then
-			TRIPLET="$(echo ${TRIPLET} | sed -r 's/^([^-]*)-[^-]*-([^-]*-[^-]*)$/\1-unknown-\2/')"
+			TRIPLET=$(echo ${TRIPLET} | sed -r 's/^([^-]*)-[^-]*-([^-]*-[^-]*)$/\1-unknown-\2/')
 		fi
 
 		if lock-obj "${TRIPLET}"; then
