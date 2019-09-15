@@ -1,3 +1,0 @@
-dev-lang/perl -ithreads # Confuses perl-cross.
-sys-apps/util-linux -udev # Cyclic dependency.
-sys-libs/pam -berkdb # .la files break build.

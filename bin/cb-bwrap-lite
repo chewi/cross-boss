@@ -1,0 +1,16 @@
+#!/bin/bash
+
+export CROSS_BOSS=$(dirname $(dirname $(readlink -f "$0")))
+
+ROOT=$1
+shift
+
+source "${CROSS_BOSS}"/scripts/bwrap-common.sh
+
+exec bwrap \
+	--bind "${ROOT}" / \
+	--dev-bind /dev /dev \
+	--proc /proc \
+	--bind /sys sys \
+	--bind /tmp /tmp \
+	"${@}"

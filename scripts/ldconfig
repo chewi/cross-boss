@@ -1,4 +1,0 @@
-#!/bin/sh
-
-PORTAGE_EMULATOR=$(portageq envvar PORTAGE_EMULATOR)
-[ -n "${PORTAGE_EMULATOR}" ] && eval "${PORTAGE_EMULATOR/\$\{ROOT\}//}" "${ROOT}/sbin/ldconfig" -r "${ROOT}"

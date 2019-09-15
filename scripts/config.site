@@ -8,14 +8,13 @@
 # value. See Gentoo bugs #454138 and #454176 for examples. We work
 # around the problem by checking if --prefix=/usr was given.
 
-if [ "${prefix}" == "/usr" ]; then
+if [ "${prefix}" == "${EPREFIX}/usr" ]; then
 	: ${ac_cv_alignof_dbus_bool_t=4}
 	: ${ac_cv_alignof_dbus_int16_t=2}
 	: ${ac_cv_alignof_dbus_int32_t=4}
 	: ${ac_cv_alignof_dbus_int64_t=8}
 
-	: ${ac_cv_file__dev_ptc=no}
-	: ${ac_cv_file__dev_ptmx=yes}
+	: ${ac_cv_file__proc_self_maps=yes}
 	: ${ac_cv_file__proc_sys_kernel_core_pattern=yes}
 	: ${ac_cv_file__sys_class_tty_tty0_active=yes}
 
@@ -24,15 +23,13 @@ if [ "${prefix}" == "/usr" ]; then
 	: ${ac_cv_have_long_long_format=yes}
 	: ${ac_cv_printf_positional=yes}
 
-	: ${bash_cv_getcwd_malloc=yes}
-	: ${bash_cv_job_control_missing=present}
-
 	: ${libreplace_cv_HAVE_GETADDRINFO=no}
 	: ${libreplace_cv_HAVE_SECURE_MKSTEMP=yes}
 
 	: ${samba_cv_CC_NEGATIVE_ENUM_VALUES=yes}
 	: ${samba_cv_USE_SETREUID=yes}
 
+	: ${bash_cv_getcwd_malloc=yes}
 	: ${krb5_cv_attr_constructor_destructor=yes,yes}
 	: ${libopts_cv_with_libregex=yes}
 	: ${ssh_cv_working_secp521r1=yes}

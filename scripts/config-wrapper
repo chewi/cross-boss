@@ -1,4 +1,0 @@
-#!/bin/sh
-
-# Prepend = (sysroot) to any -I or -L flags.
-"${ROOT:-/}usr/bin/${0##*/}" "${@}" | sed "s/\(-[IL]\)\([^=]\)/\1=\2/g"

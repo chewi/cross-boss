@@ -1,3 +1,4 @@
-#!/host-rootfs/bin/sh
+#!/bin/sh
 
-exec /usr/libexec/cross-boss/distcc/${CHOST}-g${0:$[-2]} "$@"
+LDSO=$(readlink -f /host-rootfs/usr/bin/ld.so)
+exec "${LDSO}" --inhibit-cache --library-path "/host-rootfs/usr/${CB_LIBDIR}:/host-rootfs/${CB_LIBDIR}" --argv0 "$0" /host-rootfs/usr/bin/distcc "${@}"

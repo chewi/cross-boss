@@ -1,0 +1,40 @@
+#!/bin/bash
+
+export CROSS_BOSS=$(dirname $(dirname $(readlink -f "$0")))
+source "${CROSS_BOSS}"/scripts/common.sh
+export-env
+
+SYSROOT_PROFILE=/usr/${HOST}/etc/portage/make.profile
+
+if [[ $(readlink "${SYSROOT_PROFILE}" 2>/dev/null) != $(readlink "${ROOT_PROFILE}" 2>/dev/null) ]]; then
+	echo "Syncing ${SYSROOT_PROFILE} with ${ROOT_PROFILE}." >&2
+    cp -dTf "${ROOT_PROFILE}" "${SYSROOT_PROFILE}" || exit $?
+fi
+
+# Needed to set up multilib.
+echo -e "Emerging sys-apps/baselayout ..." >&2
+cross-emerge -uv1 sys-apps/baselayout || exit $?
+
+# Needed by just about everything. :)
+echo -e "\nEmerging virtual/os-headers and virtual/libc ..." >&2
+cross-emerge -uv1 virtual/os-headers virtual/libc || exit $?
+
+# The sysroot wrappers should not be enabled while emerging the above
+# packages because we need the libc headers first.
+set-sysroot
+
+# Install GCC early because otherwise it will be possible to build but
+# not link against libraries that use C++ such as ICU.
+echo -e "\nEmerging sys-devel/gcc ..." >&2
+cross-emerge -uv1 sys-devel/gcc || exit $?
+
+echo -e "\nEmerging @system ..." >&2
+cross-emerge -uvU @system || exit $?
+
+echo -e "\nCreating important directories" >&2
+ROOT_DISTDIR=$(unset DISTDIR; root_portageq envvar DISTDIR)
+ROOT_TMPDIR=$(unset PORTAGE_TMPDIR; root_portageq envvar PORTAGE_TMPDIR)
+mkdir -p "${ROOT}"{/dev,/proc,/sys,${EPREFIX}/root,${ROOT_PORTDIR},${ROOT_DISTDIR},${ROOT_TMPDIR}} || exit $?
+chmod 700 "${EROOT}"/root || die
+
+echo -e "\nStage complete! :-)" >&2

@@ -1,130 +1,142 @@
 # Not everyone uses 022.
 umask 022
 
-# Give us some toys.
-OLD_PATH=${PATH}
-source /lib/rc/sh/functions.sh
-PATH=${OLD_PATH}:${PATH}
-
-die() {
-	[[ -z "${1}" ]] && eend 1
-	eerror "Error on line ${BASH_LINENO[0]} of ${BASH_SOURCE[1]}! ${1}"
-	exit 1
-}
-
-on-exit() {
-	ebegin "Removing temporary cross-boss files"
-	find "${ROOT}/etc/portage" -type f -name "cross-boss" -delete
-	eend 0
-
-	ebegin "Pruning empty directories"
-	find "${ROOT}/etc/portage" -type d -empty -delete
-	eend 0
-
-	if [[ -n "${DISTCCD_PID}" ]]; then
-		ebegin "Stopping distccd"
-		kill "${DISTCCD_PID}"
-		wait "${DISTCCD_PID}" 2> /dev/null
-		eend 0
-	fi
-}
-
-cb-git() {
-	git --git-dir "${CROSS_BOSS}/.git" --work-tree "${CROSS_BOSS}" "${@}"
-}
-
 export-env() {
-	export PORTDIR DISTDIR PORTAGE_TMPDIR MAKEOPTS
-	export ROOT PORTAGE_CONFIGROOT CONFIG_SITE
+	export \
+		CBFLAGS \
+		CONFIG_SITE \
+		CROSS_CMD \
+		DISTDIR \
+		MAKEOPTS \
+		PORTAGE_CONFIGROOT \
+		PORTAGE_TMPDIR \
+		PORTDIR \
+		ROOT
+}
+
+set-toolchain() {
+	export \
+		CPP="${OLD_CPP} ${CBFLAGS}" \
+		CC="${OLD_CC} ${CBFLAGS}" \
+		CXX="${OLD_CXX} ${CBFLAGS}"
 }
 
 set-sysroot() {
-	# This is used by our wrapper scripts. Don't rely on ROOT or
-	# SYSROOT. Qt resets SYSROOT, for example.
-	export CB_SYSROOT="${ROOT}"
+	CBFLAGS+="${CBFLAGS:+ }--sysroot=${ESYSROOT}"
+	set-toolchain
 
-	# cross-emerge sets this, for cross-pkg-config?
-	export SYSROOT="${ROOT}"
-
-	# This effectively enables our wrapper scripts, which need
-	# CB_SYSROOT to be set.
-	export PREROOTPATH
+	export \
+		PATH=${PREROOTPATH}:${PATH} \
+		PREROOTPATH \
+		SYSROOT
 }
 
 cross-emerge() {
-	# I don't know why cross-emerge defaults to --root-deps=rdeps as
-	# it doesn't seem useful to throw DEPEND away.
-	PATH="${PREROOTPATH}:${PATH}" CROSS_CMD="emerge" "${HOST}-emerge" "${@}"
+	# Unfortunately, overlays can't have NFS layers.
+	case "$(stat -f -c %T "${EROOT}"/etc/portage)" in
+	nfs)
+		"${HOST}-emerge" "${@}" ;;
+	*)
+		mkdir -p "${EROOT}"/mnt/workdir || exit $?
+		unshare --mount sh -c "
+			mount -t overlay -o 'lowerdir=${CROSS_BOSS}/root/etc/portage,upperdir=${EROOT}/etc/portage,workdir=${EROOT}/mnt/workdir' overlay '${EROOT}'/etc/portage || exit 1
+			exec '${HOST}-emerge' \"\${@}\"
+		" - "${@}" ;;
+	esac
 }
 
-PORTDIR=$(portageq get_repo_path / gentoo)
-DISTDIR=$(portageq envvar DISTDIR)
-PORTAGE_TMPDIR=$(portageq envvar PORTAGE_TMPDIR)
-MAKEOPTS=$(portageq envvar MAKEOPTS)
+host_portageq() {
+	env -u ROOT -u SYSROOT -u PORTAGE_CONFIGROOT -u EPREFIX portageq "${@}" 2>/dev/null
+}
 
-ROOT="${1%/}"
-PORTAGE_CONFIGROOT="${ROOT}"
-CONFIG_SITE="${CROSS_BOSS}/scripts/config.site"
-PREROOTPATH="${ROOT}/usr/libexec/cross-boss/bin"
+root_portageq() {
+	ROOT=${ROOT} SYSROOT=${SYSROOT} PORTAGE_CONFIGROOT=${PORTAGE_CONFIGROOT} portageq "${@}" 2>/dev/null
+}
 
-if [[ -z "${ROOT}" ]]; then
-	eerror "Please specify a target directory."
+ABI=$(host_portageq envvar DEFAULT_ABI)
+DISTDIR=$(host_portageq envvar DISTDIR)
+LIBDIR=$(host_portageq envvar "LIBDIR_${ABI}")
+MAKEOPTS=$(host_portageq envvar MAKEOPTS)
+PORTAGE_TMPDIR=$(host_portageq envvar PORTAGE_TMPDIR)
+PORTDIR=$(host_portageq get_repo_path / gentoo)
+
+ROOT=${1%/}
+EROOT=${ROOT}${EPREFIX:-}
+SYSROOT=${SYSROOT:-${ROOT}}
+ESYSROOT=${SYSROOT:-${ROOT}}${EPREFIX:-}
+PORTAGE_CONFIGROOT=${EROOT}
+CONFIG_SITE=${CROSS_BOSS}/scripts/config.site
+PREROOTPATH=${CROSS_BOSS}/path/generated:${CROSS_BOSS}/path
+
+# cross-emerge defaults to --root-deps=rdeps, which is unhelpful.
+CROSS_CMD=emerge
+
+if [[ -z ${ROOT} ]]; then
+	echo "Please specify a target directory." >&2
 	exit 1
 fi
 
-ebegin "Creating ${ROOT}"
-mkdir -p "${ROOT}/etc/portage" || die
-eend 0
+mkdir -p "${EROOT}"/etc/portage || exit $?
+ROOT_PROFILE=${EROOT}/etc/portage/make.profile
+ROOT_PROFILE_RESOLVED=$(readlink -m "${ROOT_PROFILE}" 2>/dev/null)
 
-# Clean up on exit.
-trap on-exit EXIT || die
+if [[ ! -d ${ROOT_PROFILE} && ${ROOT_PROFILE_RESOLVED} = */profiles/* ]]; then
+	echo "Auto-correcting ${ROOT_PROFILE} symlink for build system." >&2
+	ln -snf "${PORTDIR}/profiles/${ROOT_PROFILE_RESOLVED##*/profiles/}" "${ROOT_PROFILE}" || exit $?
+fi
 
-unset CFG_EXCLUDE
-[[ "${0##*/}" = cb-emerge-proot ]] && CFG_EXCLUDE="${CFG_EXCLUDE} --exclude=*/cross-boss"
-
-ebegin "Copying cross-boss files"
-rsync -rltDmx --chmod=ugo=rwX ${CFG_EXCLUDE} "${CROSS_BOSS}/root/" "${ROOT}/" || die
-eend 0
-
-ebegin "Removing obsolete cross-boss files"
-COMMIT=`cat "${ROOT}/.cross-boss-commit" 2> /dev/null`
-cb-git diff --name-only --diff-filter=D ${COMMIT} "${CROSS_BOSS}/root" | sed "s:^root/:${ROOT}/:" | xargs rm -f || die
-eend 0
-
-ebegin "Recording cross-boss commit"
-cb-git show-ref --head --dereference HEAD | sed "s: .*::" > "${ROOT}/.cross-boss-commit" || die
-eend 0
-
-if [[ ! -d "${ROOT}/etc/portage/make.profile" ]]; then
-	eerror "Please create a ${ROOT}/etc/portage/make.profile symlink."
+if [[ ! -d ${ROOT_PROFILE} ]]; then
+	echo "Please create a valid ${ROOT_PROFILE} symlink." >&2
 	exit 1
 fi
 
-# CHOST may be set in the profile but make.conf is preferable.
-HOST=$(PORTAGE_CONFIGROOT="${PORTAGE_CONFIGROOT}" portageq envvar CHOST)
+ROOT_PROFILE_RESOLVED=$(readlink -e "${ROOT_PROFILE}" 2>/dev/null)
 
-if [[ -z "${HOST}" ]]; then
-	eerror "Please specify CHOST in the target make.conf."
-	exit 1
+if [[ ${ROOT_PROFILE_RESOLVED} = */profiles/embedded ]]; then
+	echo "${ROOT_PROFILE} is pointing at the embedded profile. Please choose a more appropriate one." >&2
+    exit 1
 fi
 
-ebegin "Recreating sysroot script symlinks"
-mkdir -p "${PREROOTPATH}" || die
-rm -f "${PREROOTPATH}"/*
+HOST=$(root_portageq envvar CHOST)
+ROOT_ABI=$(root_portageq envvar DEFAULT_ABI)
+ROOT_LIBDIR=$(root_portageq envvar "LIBDIR_${ROOT_ABI}")
+ROOT_PORTDIR=$(unset PORTDIR; host_portageq get_repo_path "${EROOT}" gentoo)
 
-for TOOL in c++ cpp g++ gcc ld; do
-	ln -snf "${CROSS_BOSS}/scripts/sysroot-wrapper" "${PREROOTPATH}/${HOST}-${TOOL}" || die
-done
+if [[ -z ${HOST} ]]; then
+	echo "Please specify CHOST in the target make.conf." >&2
+    exit 1
+fi
 
-for TOOL in compiler generate scanner; do
-	ln -snf "${CROSS_BOSS}/bin/cb-proot" "${PREROOTPATH}/g-ir-${TOOL}" || die
-done
+OLD_CPP=${CPP:-${HOST}-cpp}
+OLD_CC=${CC:-${HOST}-gcc}
+OLD_CXX=${CXX:-${HOST}-g++}
 
-for CONFIG in ksba libassuan libpng pcap pth sdl sdl2 xml2 xslt; do
-    ln -snf "${CROSS_BOSS}/scripts/config-wrapper" "${PREROOTPATH}/${CONFIG}-config" || die
-done
+if [[ -n ${EPREFIX} ]]; then
+	# glibc: ld.so is a symlink, ldd is a binary.
+	# musl: ld.so doesn't exist, ldd is a symlink.
+	DYNLINKER=$(find /usr/"${HOST}"/usr/bin/{ld.so,ldd} -type l -print -quit 2>/dev/null)
 
-ln -snf "${CROSS_BOSS}/scripts/guile-config" "${PREROOTPATH}/guile-config" || die
-ln -snf "${CROSS_BOSS}/scripts/pkg-config" "${PREROOTPATH}/${HOST}-pkg-config" || die
-ln -snf "${CROSS_BOSS}/scripts/ldconfig" "${PREROOTPATH}/${HOST}-ldconfig" || die
-eend 0
+	# musl symlinks ldd to ld-musl.so to libc.so. We want the ld-musl.so path,
+	# not the libc.so path, so don't resolve the symlinks entirely.
+	DYNLINKER=$(readlink "${DYNLINKER}")
+
+	# Try to work out what the dynamic linker path will be. This is easier to
+	# figure out after the libc is installed, but we need to know before.
+	DYNLINKER=${EPREFIX}/lib${DYNLINKER##*/lib}
+
+	# The toolchain sysroot doesn't set the linker path, so explicitly specify.
+	CBFLAGS="-Wl,--dynamic-linker=${DYNLINKER}"
+else
+	CBFLAGS=
+fi
+
+set-toolchain
+
+# Portage looks for ${CHOST}-ldconfig in the PATH after each build.
+install -m0755 /dev/stdin "${CROSS_BOSS}"/path/generated/"${HOST}"-ldconfig <<EOF
+#!/bin/sh
+exec "${CROSS_BOSS}/bin/cb-bwrap-lite" "${ROOT}" \\
+	--setenv LD_LIBRARY_PATH "${EPREFIX}/usr/${ROOT_LIBDIR}:${EPREFIX}/${ROOT_LIBDIR}" \\
+	--setenv PATH "${EPREFIX}/usr/sbin:${EPREFIX}/usr/bin:${EPREFIX}/sbin:${EPREFIX}/bin" \\
+	ldconfig
+EOF

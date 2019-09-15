@@ -1,0 +1,51 @@
+#!/bin/bash
+
+export CROSS_BOSS=$(dirname $(dirname $(readlink -f "$0")))
+source "${CROSS_BOSS}"/scripts/common.sh
+shift
+
+source "${CROSS_BOSS}"/scripts/bwrap-common.sh
+
+if [[ ${FEATURES} = *distcc* && -x /usr/bin/distcc ]]; then
+	[[ -z "${DISTCCD_PORT}" ]] && DISTCCD_PORT=3634
+	JOBS=$(grep -P -o "(?<=-j)\d" <<< "${MAKEOPTS}" || echo 2)
+
+	export \
+		CB_LIBDIR="${LIBDIR}" \
+		DISTCC_HOSTS="127.0.0.1:${DISTCCD_PORT}/${JOBS}" \
+
+	set -- \
+		--ro-bind / /host-rootfs \
+		--ro-bind /usr/lib/distcc/bin "${EPREFIX}"/usr/lib/distcc/bin \
+		--ro-bind "${CROSS_BOSS}"/scripts/distcc-wrapper "${EPREFIX}"/usr/bin/distcc \
+		"${@}"
+
+	mkdir -p "${ROOT}"/host-rootfs "${EROOT}"/usr/lib/distcc/bin || exit $?
+
+	distccd \
+		--daemon --no-detach --user distcc \
+		--listen 127.0.0.1 -a 127.0.0.1 -p "${DISTCCD_PORT}" &
+
+	trap "kill $!" EXIT
+fi
+
+if [[ ${PORTDIR} != ${ROOT_PORTDIR} && ${ROOT_PROFILE_RESOLVED} = */profiles/* ]]; then
+	echo "Auto-correcting ${ROOT_PROFILE} symlink for target system." >&2
+	ln -snf "${ROOT_PORTDIR}/profiles/${ROOT_PROFILE_RESOLVED##*/profiles/}" "${ROOT_PROFILE}" || exit $?
+fi
+
+export SANDBOX_WRITE=${SANDBOX_WRITE}:${ROOT%/}
+export FEATURES="${FEATURES} -sandbox -ipc-sandbox -network-sandbox -pid-sandbox"
+export MAKEOPTS
+
+bwrap \
+	--bind "${ROOT}" / \
+	--bind "${PORTDIR}" "${ROOT_PORTDIR}" \
+	--bind "${DISTDIR}" "$(root_portageq envvar DISTDIR)" \
+	--bind "${PORTAGE_TMPDIR}" "$(root_portageq envvar PORTAGE_TMPDIR)" \
+	--ro-bind /etc/resolv.conf "${EPREFIX}"/etc/resolv.conf \
+	--dev-bind /dev /dev \
+	--proc /proc \
+	--bind /sys sys \
+	--bind /tmp /tmp \
+	"${@}"

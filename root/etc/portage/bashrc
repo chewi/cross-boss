@@ -1,173 +1,19 @@
-function_body() {
-	declare -f "${1}" | tail -n +3 | head -n -1
+post_pkg_preinst() {
+	# Gather all the non-binary files with the --sysroot or --with-sysroot flag.
+	mapfile -t -d '' < <(find "${D}" -type f -exec grep -lZEIe "--sysroot=${ROOT}\b|--with-sysroot=${EROOT}\b" {} +) FILES
+
+	# Only continue if there are any.
+	[[ ${#FILES[@]} -eq 0 ]] && return
+
+	# Carefully strip --with-sysroot and each CBFLAG, which includes --sysroot.
+	local sedargs=( -i -r )
+	local flag
+	for flag in "--with-sysroot=${EROOT}" ${CBFLAGS}; do
+		sedargs+=(
+			-e "s:(, *)?\" *${flag} *\"::g"
+			-e "s:(, *)?' *${flag} *'::g"
+			-e "s:,? ?${flag}\b::g"
+		)
+	done
+	sed "${sedargs[@]}" "${FILES[@]}" || die
 }
-
-eclass_function() {
-	# Generate a unique label to prevent wrapping multiple times.
-	local IDENTIFIER="${1//-/_}_${2//-/_}_${BASH_LINENO[0]}"
-
-	if [[ -z "${!IDENTIFIER}" ]] && has "${1}" ${INHERITED} && type "$2" >& /dev/null; then
-		export "${IDENTIFIER}=true"
-		return 0
-	else
-		return 1
-	fi
-}
-
-if eclass_function eutils epatch_user; then
-	if eclass_function autotools eautoreconf; then
-		eval "
-		eautoreconf() {
-			epatch_user
-			$(function_body eautoreconf)
-		}"
-	fi
-
-	if [[ "${EAPI}" < 2 ]]; then
-		post_src_unpack() {
-			epatch_user
-		}
-	else
-		post_src_prepare() {
-			epatch_user
-		}
-	fi
-fi
-
-if [[ -n "${CB_SYSROOT}" && "${ROOT}" != "/" ]]; then
-	# Some minimalistic trickery to cross-compile Perl modules. Sadly
-	# still needs QEMU for the configure phase. :(
-	if eclass_function perl-module perl-module_src_compile; then
-		eval "
-		perl-module_src_compile() {
-			local mymake=(
-				\"\${mymake[@]}\"
-				\"PERL_ARCHLIB=\${ROOT%/}\${ARCH_LIB}\"
-				\"PERL_INC=\${ROOT%/}\${ARCH_LIB}/CORE\"
-				\"XSUBPPDIR=\${ROOT%/}\${SITE_LIB/\/local}/ExtUtils\"
-				\"XSUBPPDEPS=\\\$(XSUBPPDIR)/typemap \\\$(XSUBPP)\"
-				\"XSUBPPARGS=-typemap \\\$(XSUBPPDIR)/typemap\"
-			)
-
-			$(function_body perl-module_src_compile)
-		}"
-
-		eval "
-		perl-module_src_install() {
-			local myinst=(
-				\"\${myinst[@]}\"
-				\"PERL_ARCHLIB=\${ROOT%/}\${ARCH_LIB}\"
-				\"PERL_INC=\${ROOT%/}\${ARCH_LIB}/CORE\"
-				\"XSUBPPDIR=\${ROOT%/}\${SITE_LIB/\/local}/ExtUtils\"
-				\"XSUBPPDEPS=\\\$(XSUBPPDIR)/typemap \\\$(XSUBPP)\"
-				\"XSUBPPARGS=-typemap \\\$(XSUBPPDIR)/typemap\"
-			)
-
-			$(function_body perl-module_src_install)
-		}"
-
-		perl() {
-			# Run perl through proot/QEMU.
-			"${CROSS_BOSS}/bin/cb-proot" "${ROOT}" perl "${@}"
-		}
-	fi
-
-	# Install distutils-r1 Python modules to the right libdir. Doesn't
-	# fix cross-compiling of native modules. :( Gentoo bug #503874.
-	if eclass_function distutils-r1 distutils-r1_python_install; then
-		eval "
-		distutils-r1_python_install() {
-			set -- --install-lib=\"\$(python_get_sitedir)\" \"\${@}\"
-			$(function_body distutils-r1_python_install)
-		}"
-	fi
-
-	# Enable cross-compiling under Waf. Gentoo bug #500090.
-	if eclass_function waf-utils waf-utils_src_configure; then
-		waf-utils_src_configure() {
-			debug-print-function ${FUNCNAME} "$@"
-
-			# @ECLASS-VARIABLE: WAF_BINARY
-			# @DESCRIPTION:
-			# Eclass can use different waf executable. Usually it is located in "${S}/waf".
-			: ${WAF_BINARY:="${S}/waf"}
-
-			# @ECLASS-VARIABLE: NO_WAF_LIBDIR
-			# @DEFAULT_UNSET
-			# @DESCRIPTION:
-			# Variable specifying that you don't want to set the libdir for waf script.
-			# Some scripts does not allow setting it at all and die if they find it.
-			[[ -z ${NO_WAF_LIBDIR} ]] && set -- "--libdir=${EPREFIX}/usr/$(get_libdir)" "${@}"
-
-			if tc-is-cross-compiler; then
-				if [[ -n ${PORTAGE_EMULATOR} ]]; then
-					set -- "--cross-compile" "--cross-execute=$(eval echo ${PORTAGE_EMULATOR})" "${@}"
-				else
-					local T_CROSS_ANSWERS="${T}/waf-cross-answers.txt"
-					set -- "--cross-compile" "--cross-answers=${T_CROSS_ANSWERS}" "${@}"
-
-					if [[ -n ${WAF_CROSS_ANSWERS} ]]; then
-						cp "${WAF_CROSS_ANSWERS}" "${T_CROSS_ANSWERS}" || die
-					else
-						echo "Checking simple C program: OK" > "${T_CROSS_ANSWERS}" || die
-					fi
-
-					ewarn "If the build fails then make a copy of ${T_CROSS_ANSWERS},"
-					ewarn "fill in the answers, and point WAF_CROSS_ANSWERS to this copy before"
-					ewarn "attempting the build again. Alternatively, set PORTAGE_EMULATOR."
-				fi
-			fi
-
-			tc-export AR CC CPP CXX RANLIB
-			echo "CCFLAGS=\"${CFLAGS}\" LINKFLAGS=\"${LDFLAGS}\" \"${WAF_BINARY}\" --prefix=${EPREFIX}/usr $@ configure"
-			CCFLAGS="${CFLAGS}" LINKFLAGS="${LDFLAGS}" "${WAF_BINARY}" "--prefix=${EPREFIX}/usr" "$@" configure || die "configure failed"
-		}
-	fi
-fi
-
-if [[ -z "${CB_BASHRC}" ]]; then
-	if [[ -n "${CB_SYSROOT}" && "${ROOT}" != "/" ]]; then
-		extra_econf_sysroot() {
-			if grep -qsF lt_sysroot configure; then
-				EXTRA_ECONF="${EXTRA_ECONF} --with-sysroot=${ROOT}"
-			fi
-		}
-
-		create_boost_symlink() {
-			if [[ "${DEPEND}" == *dev-libs/boost* ]] && ! has_version dev-libs/boost; then
-				SANDBOX_WRITE="${ROOT}usr/include/boost:/dev/null" \
-					ln -snT /usr/include/boost "${ROOT}usr/include/boost" 2> /dev/null
-			else
-				remove_boost_symlink
-			fi
-		}
-
-		remove_boost_symlink() {
-			if [[ -L "${ROOT}usr/include/boost" ]]; then
-				SANDBOX_WRITE="${ROOT}usr/include/boost" \
-					rm -f "${ROOT}usr/include/boost"
-			fi
-		}
-
-		post_src_compile() {
-			remove_boost_symlink
-		}
-
-		if [[ "${EAPI}" < 2 ]]; then
-			pre_src_compile() {
-				extra_econf_sysroot
-				create_boost_symlink
-			}
-		else
-			pre_src_configure() {
-				extra_econf_sysroot
-				create_boost_symlink
-			}
-		fi
-	elif [[ -e "/host-rootfs/usr/bin/distcc" ]] && [[ "${FEATURES}" = *distcc* ]]; then
-		PATH="${PATH//lib*\/distcc\/bin/libexec/cross-boss/distcc}"
-	fi
-
-	# Only run once.
-	CB_BASHRC=1
-fi

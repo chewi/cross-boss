@@ -1,10 +1,10 @@
 #!/bin/bash
 
 export CROSS_BOSS=$(dirname $(dirname $(readlink -f "$0")))
-source "${CROSS_BOSS}/scripts/common.sh"
+source "${CROSS_BOSS}"/scripts/common.sh
 export-env
 set-sysroot
 
 shift
-CROSS_CMD="ebuild" "${HOST}-emerge" "${@}"
+CROSS_CMD=ebuild cross-emerge "${@}"
 echo

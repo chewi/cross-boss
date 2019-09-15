@@ -1,5 +1,0 @@
-# Gentoo bug #134650.
-
-if type get_libdir >& /dev/null; then
-	myconf="EXPATLIBPATH=${EROOT}usr/$(get_libdir) EXPATINCPATH=${EROOT}usr/include"
-fi
