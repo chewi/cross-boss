@@ -1,0 +1,12 @@
+diff -Naur a/buildtools/wafsamba/wscript b/buildtools/wafsamba/wscript
+--- a/buildtools/wafsamba/wscript	2015-02-24 19:10:33.000000000 +0000
++++ b/buildtools/wafsamba/wscript	2016-10-08 16:39:25.634932327 +0100
+@@ -76,7 +76,7 @@
+ 
+     opt.add_option('--with-libiconv',
+                    help='additional directory to search for libiconv',
+-                   action='store', dest='iconv_open', default='/usr/local',
++                   action='store', dest='iconv_open', default='None',
+                    match = ['Checking for library iconv', 'Checking for iconv_open', 'Checking for header iconv.h'])
+     opt.add_option('--with-gettext',
+                    help='additional directory to search for gettext',

@@ -1,0 +1,9 @@
+post_pkg_setup() {
+	export PYTHON_NOVERSIONCHECK="no-check"
+	export PYTHON_VERSION="${EPYTHON#python}"
+	export PYTHON_CPPFLAGS="$(python_get_CFLAGS)"
+	export PYTHON_LDFLAGS="$(python_get_LIBS)"
+}
+
+# No pkg-config module, fails on cross-compile.
+export TINYXML_CFLAGS=" " TINYXML_LIBS="-ltinyxml"

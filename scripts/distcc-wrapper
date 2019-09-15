@@ -1,3 +1,3 @@
 #!/host-rootfs/bin/sh
 
-exec /usr/libexec/cross-boss/distcc/${CHOST}-g${0:$[-2]} "$@"
+exec "${EPREFIX}"/usr/libexec/cross-boss/distcc/${CHOST}-g${0:$[-2]} "$@"

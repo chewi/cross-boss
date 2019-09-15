@@ -1,4 +1,6 @@
 #!/bin/sh
 
+export PATH=${OLD_PATH}
+
 # ./configure usually accepts --sysroot but this is more reliable.
-exec "/usr/bin/${0##*/}" --sysroot="${CB_SYSROOT}" "${@}"
+exec "${0##*/}" --sysroot="${SYSROOT%/}${EPREFIX}" "${@}"

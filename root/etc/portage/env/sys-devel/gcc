@@ -1,0 +1,1 @@
+export CC_FOR_TARGET="${CC}" CXX_FOR_TARGET="${CXX}" LD_FOR_TARGET="${LD}"

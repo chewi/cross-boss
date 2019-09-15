@@ -14,27 +14,7 @@ eclass_function() {
 	fi
 }
 
-if eclass_function eutils epatch_user; then
-	if eclass_function autotools eautoreconf; then
-		eval "
-		eautoreconf() {
-			epatch_user
-			$(function_body eautoreconf)
-		}"
-	fi
-
-	if [[ "${EAPI}" < 2 ]]; then
-		post_src_unpack() {
-			epatch_user
-		}
-	else
-		post_src_prepare() {
-			epatch_user
-		}
-	fi
-fi
-
-if [[ -n "${CB_SYSROOT}" && "${ROOT}" != "/" ]]; then
+if [[ ${SYSROOT:-/} != / ]]; then
 	# Some minimalistic trickery to cross-compile Perl modules. Sadly
 	# still needs QEMU for the configure phase. :(
 	if eclass_function perl-module perl-module_src_compile; then
@@ -43,9 +23,11 @@ if [[ -n "${CB_SYSROOT}" && "${ROOT}" != "/" ]]; then
 			local mymake=(
 				\"\${mymake[@]}\"
 				\"PERL_ARCHLIB=\${ROOT%/}\${ARCH_LIB}\"
+				\"PERL_ARCHLIBDEP=\${ROOT%/}\${ARCH_LIB}\"
 				\"PERL_INC=\${ROOT%/}\${ARCH_LIB}/CORE\"
+				\"PERL_INCDEP=\${ROOT%/}\${ARCH_LIB}/CORE\"
 				\"XSUBPPDIR=\${ROOT%/}\${SITE_LIB/\/local}/ExtUtils\"
-				\"XSUBPPDEPS=\\\$(XSUBPPDIR)/typemap \\\$(XSUBPP)\"
+				\"XSUBPPDEPS=\\\$(XSUBPPDIR)/typemap \\\$(XSUBPPDIR)/xsubpp\"
 				\"XSUBPPARGS=-typemap \\\$(XSUBPPDIR)/typemap\"
 			)
 
@@ -57,9 +39,11 @@ if [[ -n "${CB_SYSROOT}" && "${ROOT}" != "/" ]]; then
 			local myinst=(
 				\"\${myinst[@]}\"
 				\"PERL_ARCHLIB=\${ROOT%/}\${ARCH_LIB}\"
+				\"PERL_ARCHLIBDEP=\${ROOT%/}\${ARCH_LIB}\"
 				\"PERL_INC=\${ROOT%/}\${ARCH_LIB}/CORE\"
+				\"PERL_INCDEP=\${ROOT%/}\${ARCH_LIB}/CORE\"
 				\"XSUBPPDIR=\${ROOT%/}\${SITE_LIB/\/local}/ExtUtils\"
-				\"XSUBPPDEPS=\\\$(XSUBPPDIR)/typemap \\\$(XSUBPP)\"
+				\"XSUBPPDEPS=\\\$(XSUBPPDIR)/typemap \\\$(XSUBPPDIR)/xsubpp\"
 				\"XSUBPPARGS=-typemap \\\$(XSUBPPDIR)/typemap\"
 			)
 
@@ -68,18 +52,8 @@ if [[ -n "${CB_SYSROOT}" && "${ROOT}" != "/" ]]; then
 
 		perl() {
 			# Run perl through proot/QEMU.
-			"${CROSS_BOSS}/bin/cb-proot" "${ROOT}" perl "${@}"
+			"${CROSS_BOSS}"/bin/cb-proot "${ROOT}" perl "${@}"
 		}
-	fi
-
-	# Install distutils-r1 Python modules to the right libdir. Doesn't
-	# fix cross-compiling of native modules. :( Gentoo bug #503874.
-	if eclass_function distutils-r1 distutils-r1_python_install; then
-		eval "
-		distutils-r1_python_install() {
-			set -- --install-lib=\"\$(python_get_sitedir)\" \"\${@}\"
-			$(function_body distutils-r1_python_install)
-		}"
 	fi
 
 	# Enable cross-compiling under Waf. Gentoo bug #500090.
@@ -119,53 +93,44 @@ if [[ -n "${CB_SYSROOT}" && "${ROOT}" != "/" ]]; then
 			fi
 
 			tc-export AR CC CPP CXX RANLIB
-			echo "CCFLAGS=\"${CFLAGS}\" LINKFLAGS=\"${LDFLAGS}\" \"${WAF_BINARY}\" --prefix=${EPREFIX}/usr $@ configure"
-			CCFLAGS="${CFLAGS}" LINKFLAGS="${LDFLAGS}" "${WAF_BINARY}" "--prefix=${EPREFIX}/usr" "$@" configure || die "configure failed"
+			python_export PYTHON_CONFIG
+
+			local CMD=(
+				CCFLAGS="${CFLAGS}"
+				LINKFLAGS="${CFLAGS} ${LDFLAGS}"
+				PKGCONFIG="$(tc-getPKG_CONFIG)"
+				"${WAF_BINARY}"
+				"--prefix=${EPREFIX}/usr"
+				"${libdir[@]}"
+				"${@}"
+				configure
+			)
+
+			echo "${CMD[@]@Q}"
+			env "${CMD[@]}" || die "configure failed"
 		}
 	fi
 fi
 
-if [[ -z "${CB_BASHRC}" ]]; then
-	if [[ -n "${CB_SYSROOT}" && "${ROOT}" != "/" ]]; then
+if [[ -z ${CB_BASHRC} ]]; then
+	if [[ ${SYSROOT:-/} != / ]]; then
 		extra_econf_sysroot() {
 			if grep -qsF lt_sysroot configure; then
-				EXTRA_ECONF="${EXTRA_ECONF} --with-sysroot=${ROOT}"
+				EXTRA_ECONF+=" --with-sysroot=${SYSROOT%/}${EPREFIX}"
 			fi
-		}
-
-		create_boost_symlink() {
-			if [[ "${DEPEND}" == *dev-libs/boost* ]] && ! has_version dev-libs/boost; then
-				SANDBOX_WRITE="${ROOT}usr/include/boost:/dev/null" \
-					ln -snT /usr/include/boost "${ROOT}usr/include/boost" 2> /dev/null
-			else
-				remove_boost_symlink
-			fi
-		}
-
-		remove_boost_symlink() {
-			if [[ -L "${ROOT}usr/include/boost" ]]; then
-				SANDBOX_WRITE="${ROOT}usr/include/boost" \
-					rm -f "${ROOT}usr/include/boost"
-			fi
-		}
-
-		post_src_compile() {
-			remove_boost_symlink
 		}
 
 		if [[ "${EAPI}" < 2 ]]; then
 			pre_src_compile() {
 				extra_econf_sysroot
-				create_boost_symlink
 			}
-		else
+		elif  [[ "${EAPI}" < 7 ]]; then
 			pre_src_configure() {
 				extra_econf_sysroot
-				create_boost_symlink
 			}
 		fi
-	elif [[ -e "/host-rootfs/usr/bin/distcc" ]] && [[ "${FEATURES}" = *distcc* ]]; then
-		PATH="${PATH//lib*\/distcc\/bin/libexec/cross-boss/distcc}"
+	elif [[ -e /host-rootfs/usr/bin/distcc ]] && [[ ${FEATURES} = *distcc* ]]; then
+		PATH=${PATH//lib*\/distcc\/bin/libexec/cross-boss/distcc}
 	fi
 
 	# Only run once.

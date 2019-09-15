@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ "${CBUILD:-${CHOST}}" != "${CHOST}" ]; then
+	PKG_CONFIG=${CHOST}-pkg-config exec "${CROSS_BOSS}"/bin/cb-proot "${ROOT}" "${0##*/}" "${@}"
+else
+	export PATH=${OLD_PATH}
+	exec "${0##*/}" "${@}"
+fi

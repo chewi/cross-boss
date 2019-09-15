@@ -6,8 +6,8 @@
 # strings to extract the link/compile values from the native library
 # instead. Hacky but more accurate.
 
-STRINGS="${CHOST}-strings"
-LIB="${CB_SYSROOT}usr/lib/libguile.so"
+STRINGS=${CHOST}-strings
+LIB=${SYSROOT%/}${EPREFIX}/usr/lib/libguile.so
 
 case "$1" in
 	link)
@@ -17,5 +17,6 @@ case "$1" in
 	compile)
 		"${STRINGS}" "${LIB}" | grep -F -x -m1 -A1 CFLAGS | tail -n1 ;;
 	*)
-		exec /usr/bin/guile-config "${@}" ;;
+		export PATH=${OLD_PATH}
+		exec guile-config "${@}" ;;
 esac

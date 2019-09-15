@@ -1,3 +1,4 @@
 dev-lang/perl -ithreads # Confuses perl-cross.
+net-dns/bind-tools -seccomp # Breaks configure.
 sys-apps/util-linux -udev # Cyclic dependency.
 sys-libs/pam -berkdb # .la files break build.

@@ -178,6 +178,10 @@ Worst of all, even using EAPI 5-hdepend is not straightforward. This experimenta
 
 configure scripts perform a series of checks and tests in order to build software appropriately for your target. They try to do this without the need to execute any binaries but sometimes it is just unavoidable and if you are cross-compiling, that is when you will see the above error. Fortunately it can usually be worked around relatively easily. Each test sets a corresponding environment variable. If you set this variable in advance then configure will skip the test and use your value instead. crossdev installs a set of the most common test results under /usr/share/crossdev/include/site. These are categorised by architecture, operating system, and C library. The appropriate files are automatically sourced by /usr/share/config.site every time you run configure when cross-compiling. cross-boss includes a bunch of additional test results under scripts/config.site. These are not categorised like crossdev's scripts, primarily because I haven't got the means to test all these different combinations, but I have tried to aim for a relatively sane glibc-based or uClibc-based Linux system. If you hit the above error then locate the failing test within the configure script and make a note of its variable name. In order to determine the actual result, you will need to start the build through cb-proot-emerge or run emerge on your target hardware. Failing that, get the result from your build system instead and use your own judgement to decide whether the result is likely to be the same on your target hardware. There may also be a similarly-named variable already present in the existing result set. Once you have a result, add a corresponding line to scripts/config.site and try again. If it works, consider filing a cross-boss issue about it.
 
+### libtool: Version mismatch error…
+
+This happens when elibtoolize is called but the version of libtool in / doesn't match that in ROOT. Simply update them to the same version and you'll be on your way again.
+
 Q&A
 ---
 

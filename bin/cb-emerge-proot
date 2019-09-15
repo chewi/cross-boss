@@ -1,42 +1,42 @@
 #!/bin/bash
 
 export CROSS_BOSS=$(dirname $(dirname $(readlink -f "$0")))
-source "${CROSS_BOSS}/scripts/common.sh"
+source "${CROSS_BOSS}"/scripts/common.sh
 
 export MAKEOPTS=$(env -u ROOT -u PORTAGE_CONFIGROOT portageq envvar MAKEOPTS)
-QEMU=$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar PORTAGE_EMULATOR)
+QEMU=$(PORTAGE_CONFIGROOT=${ROOT} portageq envvar PORTAGE_EMULATOR)
 
 shift 1
 set -- emerge "${@}"
-[[ -n "${QEMU}" ]] && set -- -q "${QEMU%% *}" "${@}"
+[[ -n ${QEMU} ]] && set -- -q "${QEMU%% *}" "${@}"
 
-if [[ -e "/usr/bin/distcc" ]]; then
-	DIR="${ROOT}/usr/libexec/cross-boss/distcc"
+if [[ -e /usr/bin/distcc ]]; then
+	DIR=${ROOT}/usr/libexec/cross-boss/distcc
 
 	ebegin "Recreating distcc symlinks"
 	mkdir -p "${DIR}" || die
 	rm -f "${DIR}"/*
 
 	for TOOL in c++ g++ gcc; do
-		ln -snf "/host-rootfs/usr/bin/distcc" "${DIR}/${HOST}-${TOOL}" || die
+		ln -snf /host-rootfs/usr/bin/distcc "${DIR}/${HOST}-${TOOL}" || die
 	done
 
 	for TOOL in c++ g++ gcc cc; do
-		ln -snf "/host-rootfs${CROSS_BOSS}/scripts/distcc-wrapper" "${DIR}/${TOOL}" || die
+		ln -snf "/host-rootfs${CROSS_BOSS}"/scripts/distcc-wrapper "${DIR}/${TOOL}" || die
 	done
 
 	# Portage won't activate distcc without this.
-	ARCH=$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar ARCH)
-	LIBDIR=$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar "LIBDIR_${ARCH}")
-	mkdir -p "${ROOT}/usr/${LIBDIR}/distcc/bin"
+	ARCH=$(PORTAGE_CONFIGROOT=${ROOT} portageq envvar ARCH)
+	LIBDIR=$(PORTAGE_CONFIGROOT=${ROOT} portageq envvar "LIBDIR_${ARCH}")
+	mkdir -p "${ROOT}"/usr/${LIBDIR}/distcc/bin
 	eend 0
 
-	[[ -z "${DISTCCD_PORT}" ]] && DISTCCD_PORT=3634
+	[[ -z ${DISTCCD_PORT} ]] && DISTCCD_PORT=3634
 	JOBS=$(echo "${MAKEOPTS}" | grep -P -o "(?<=-j)\d" || echo 2)
 
 	ebegin "Starting distccd on port ${DISTCCD_PORT}"
-	PATH="${ROOT}/usr/libexec/cross-boss/bin" \
-	CB_SYSROOT="${ROOT}" \
+	PATH=${ROOT}/usr/libexec/cross-boss/bin \
+	CB_SYSROOT=${ROOT} \
 	/usr/bin/distccd \
 		--daemon --no-detach --user distcc \
 		--listen 127.0.0.1 -a 127.0.0.1 -p "${DISTCCD_PORT}" &
@@ -52,10 +52,10 @@ else
 fi
 
 # https://github.com/cedric-vincent/PRoot/issues/55
-export LD_LIBRARY_PATH="$(env -u ROOT -u PORTAGE_CONFIGROOT -u CHOST gcc-config -L)"
+export LD_LIBRARY_PATH=$(env -u ROOT -u PORTAGE_CONFIGROOT -u CHOST gcc-config -L)
 
 proot -R "${ROOT}" -b . \
 	-b "$(env -u ROOT -u PORTAGE_CONFIGROOT portageq get_repo_path / gentoo):$(portageq get_repo_path "${ROOT}" gentoo)" \
 	-b "$(env -u ROOT -u PORTAGE_CONFIGROOT portageq envvar DISTDIR):$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar DISTDIR)" \
-	-b "$(env -u ROOT -u PORTAGE_CONFIGROOT portageq envvar PORTAGE_TMPDIR):$(PORTAGE_CONFIGROOT="${ROOT}" portageq envvar PORTAGE_TMPDIR)" \
+	-b "$(env -u ROOT -u PORTAGE_CONFIGROOT portageq envvar PORTAGE_TMPDIR):$(PORTAGE_CONFIGROOT=${ROOT} portageq envvar PORTAGE_TMPDIR)" \
 	"${@}"
