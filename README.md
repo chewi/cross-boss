@@ -172,6 +172,10 @@ I'm sorry to hear that cross-boss has failed to meet your expectations. While th
 
 Yes, I've been a Gentoo developer for a while, and I've tried to fix as much as possible in the distribution since then. cross-boss is just a home for the uglier hacks and the additional glue to make the process easier.
 
+### Is building with Clang supported?
+
+Yes! Just set `CPP="clang -E" CC="clang" CXX="clang++"` whenever you call any of the cross-boss commands. You still need a crossdev toolchain with GCC though. Other flags are normally needed to make this work, but cross-boss adds these for you.
+
 ### Is Gentoo Prefix supported?
 
 Yes, standalone prefix (aka RAP) is supported! It's an additional layer of complexity, so considerable effort was needed to make it work, but I got there eventually. This is great for building Gentoo for your phone, as doing this the usual way would be very slow and heavy on your device. Just use an appropriate prefix profile, and set `EPREFIX` whenever you call any of the cross-boss commands.

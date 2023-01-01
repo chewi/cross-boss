@@ -3,7 +3,10 @@ umask 022
 
 export-env() {
 	export \
-		CBFLAGS \
+		CB_CPPFLAGS \
+		CB_CCFLAGS \
+		CB_CXXFLAGS \
+		CB_LDFLAGS \
 		CONFIG_SITE \
 		CROSS_CMD \
 		DISTDIR \
@@ -16,13 +19,19 @@ export-env() {
 
 set-toolchain() {
 	export \
-		CPP="${OLD_CPP} ${CBFLAGS}" \
-		CC="${OLD_CC} ${CBFLAGS}" \
-		CXX="${OLD_CXX} ${CBFLAGS}"
+		CPP="${OLD_CPP} ${CB_CPPFLAGS}" \
+		CC="${OLD_CC} ${CB_CCFLAGS}" \
+		CXX="${OLD_CXX} ${CB_CXXFLAGS}"
+}
+
+append_cb_flag() {
+	CB_CPPFLAGS+=${CB_CPPFLAGS:+ }$1
+	CB_CCFLAGS+=${CB_CCFLAGS:+ }$1
+	CB_CXXFLAGS+=${CB_CXXFLAGS:+ }$1
 }
 
 set-sysroot() {
-	CBFLAGS+="${CBFLAGS:+ }--sysroot=${ESYSROOT}"
+	append_cb_flag --sysroot="${ESYSROOT}"
 	set-toolchain
 
 	export \
@@ -98,18 +107,35 @@ if [[ ${ROOT_PROFILE_RESOLVED} = */profiles/embedded ]]; then
 fi
 
 HOST=$(root_portageq envvar CHOST)
-ROOT_ABI=$(root_portageq envvar DEFAULT_ABI)
-ROOT_LIBDIR=$(root_portageq envvar "LIBDIR_${ROOT_ABI}")
-ROOT_PORTDIR=$(unset PORTDIR; host_portageq get_repo_path "${EROOT}" gentoo)
 
 if [[ -z ${HOST} ]]; then
 	echo "Please specify CHOST in the target make.conf." >&2
     exit 1
 fi
 
-OLD_CPP=${CPP:-${HOST}-cpp}
+ROOT_ABI=$(root_portageq envvar DEFAULT_ABI)
+ROOT_LIBDIR=$(root_portageq envvar "LIBDIR_${ROOT_ABI}")
+ROOT_PORTDIR=$(unset PORTDIR; host_portageq get_repo_path "${EROOT}" gentoo)
+
+OLD_CPP=${CPP:-${HOST}-gcc -E}
 OLD_CC=${CC:-${HOST}-gcc}
 OLD_CXX=${CXX:-${HOST}-g++}
+
+CB_CPPFLAGS=
+CB_CCFLAGS=
+CB_CXXFLAGS=
+CB_LDFLAGS=
+
+for TOOL in CPP CC CXX; do
+	OLD=OLD_${TOOL}
+	FLAGS=CB_${TOOL}FLAGS
+
+	if [[ ${!OLD} = *clang* ]]; then
+		: ${CURRENT_GCC=$(unset ROOT EPREFIX; gcc-config -c "${HOST}")}
+		: ${GCC_LIB=$(unset ROOT EPREFIX; gcc-config -L "${CURRENT_GCC}")}
+		declare ${FLAGS}="--target=${HOST} --gcc-install-dir=${GCC_LIB}"
+	fi
+done
 
 if [[ -n ${EPREFIX} ]]; then
 	# glibc: ld.so is a symlink, ldd is a binary.
@@ -125,9 +151,9 @@ if [[ -n ${EPREFIX} ]]; then
 	DYNLINKER=${EPREFIX}/lib${DYNLINKER##*/lib}
 
 	# The toolchain sysroot doesn't set the linker path, so explicitly specify.
-	CBFLAGS="-Wl,--dynamic-linker=${DYNLINKER}"
-else
-	CBFLAGS=
+	CB_LDFLAGS="-Wl,--dynamic-linker=${DYNLINKER}"
+	export LDFLAGS=$(root_portageq envvar LDFLAGS)
+	LDFLAGS+=${LDFLAGS:+ }${CB_LDFLAGS}
 fi
 
 set-toolchain

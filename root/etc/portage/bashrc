@@ -5,10 +5,10 @@ post_pkg_preinst() {
 	# Only continue if there are any.
 	[[ ${#FILES[@]} -eq 0 ]] && return
 
-	# Carefully strip --with-sysroot and each CBFLAG, which includes --sysroot.
+	# Carefully strip --with-sysroot and each CB FLAG, which includes --sysroot.
 	local sedargs=( -i -r )
 	local flag
-	for flag in "--with-sysroot=${EROOT}" ${CBFLAGS}; do
+	for flag in "--with-sysroot=${EROOT}" $(printf "%s\n" ${CB_CPPFLAGS} ${CB_CCFLAGS} ${CB_CXXFLAGS} ${CB_LDFLAGS} | sort -u); do
 		sedargs+=(
 			-e "s:(, *)?\" *${flag} *\"::g"
 			-e "s:(, *)?' *${flag} *'::g"
