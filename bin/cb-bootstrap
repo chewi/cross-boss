@@ -11,6 +11,9 @@ if [[ $(readlink "${SYSROOT_PROFILE}" 2>/dev/null) != $(readlink "${ROOT_PROFILE
     cp -dTf "${ROOT_PROFILE}" "${SYSROOT_PROFILE}" || exit $?
 fi
 
+# This should only be enabled when bootstrapping.
+export USE+=" build"
+
 # Needed to set up multilib.
 echo -e "Emerging sys-apps/baselayout ..." >&2
 cross-emerge -uv1 sys-apps/baselayout || exit $?
