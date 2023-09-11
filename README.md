@@ -34,7 +34,7 @@ Requirements
 
 * A working Gentoo system, preferably up to date.
 * A stage 4 toolchain for your target, built with sys-devel/crossdev.
-* sys-apps/bubblewrap to chroot into a target system. _(optional)_
+* sys-apps/bubblewrap to run ldconfig and chroot into a target system.
 * app-emulation/qemu to chroot into a non-native target system and cross-compile certain packages. _(optional)_
 * sys-devel/distcc for a speed boost when using `cb-bwrap`. _(optional)_
 
