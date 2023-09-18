@@ -42,8 +42,9 @@ set-sysroot() {
 
 cross-emerge() {
 	# Unfortunately, overlays can't have NFS layers.
+	# Also, overlayfs does not stack on overlayfs (e.g. inside docker containers).
 	case "$(stat -f -c %T "${EROOT}"/etc/portage)" in
-	nfs)
+	overlayfs|nfs)
 		"${HOST}-emerge" "${@}" ;;
 	*)
 		mkdir -p "${EROOT}"/mnt/workdir || exit $?
