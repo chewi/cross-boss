@@ -154,12 +154,6 @@ This happens when elibtoolize is called but the version of libtool in / doesn't 
 Q&A
 ---
 
-### Why are users and groups added to / rather than ROOT?
-
-This problem is not unique to cross-boss and I'm frankly quite surprised that no one has stepped up to provide a solution. The various tools such as useradd do have a `-R` option to specify a root directory but this performs an actual chroot, making it useless for non-native environments. Even if this somehow worked or if it were run through QEMU, it would still not be sufficient because Portage needs to know about these users and groups from the perspective of the build system.
-
-I believe what is needed is some way to intelligently sync the accounts between / and ROOT. If a user or group already exists in / then use the same ID in ROOT. If it doesn't already exist then create it in / first, ensuring that the new ID doesn't clash with one already in ROOT. If there is an unresolvable ID clash then error out. I may look into this in the future but any help would be greatly appreciated by both me and the community. For now, you'll just have to make do with manually copying entries from / into ROOT.
-
 ### Can I emerge to / and ROOT at the same time?
 
 This is not advisable. cross-boss uses the same `PORTAGE_TMPDIR` as / does so it is possible that they may trample on each other. Even if it didn't, it is still not advisable because installing packages to ROOT can also result in packages being installed to / as well.
