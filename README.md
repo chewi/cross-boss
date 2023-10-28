@@ -174,6 +174,10 @@ Yes! Just set `CPP="clang -E" CC="clang" CXX="clang++"` whenever you call any of
 
 Yes, standalone prefix (aka RAP) is supported! It's an additional layer of complexity, so considerable effort was needed to make it work, but I got there eventually. This is great for building Gentoo for your phone, as doing this the usual way would be very slow and heavy on your device. Just use an appropriate prefix profile, and set `EPREFIX` whenever you call any of the cross-boss commands.
 
+### Can I use this for a native build?
+
+It would be nice if cross-boss could bootstrap an entirely new "native" system where `CHOST == CBUILD`. It sounds like it should be easy, given that native builds are the mainline use case for Gentoo. However, you cannot assume that library versions, USE flags, and other factors will align in a compatible way, so you must therefore treat it like a cross build. This includes tricking packages into thinking you're cross-compiling when you're not. This has sadly been found to be infeasible, especially when prefix is involved. You can work around it by using crossdev to create another toolchain like `x86_64-cross-linux-gnu` though.
+
 ### What's in a name?
 
 cross-boss went through several names during its creation. It was actually called cross-stage until the very last minute but it had struck me for a while that this was a very boring name and these scripts do more than that name would suggest. cross-boss may be a tad silly but then so is its author. It also rhymes with CrossDOS and that stirs up nostalgic memories of AmigaOS. That's not entirely inappropriate given that my first experience of cross-compiling involved installing Gentoo on my Amiga 1200. Maybe I'll use cross-boss to try that again some time. (-;
