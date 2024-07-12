@@ -5,10 +5,11 @@ source "${CROSS_BOSS}"/scripts/common.sh
 export-env
 
 SYSROOT_PROFILE=/usr/${HOST}/etc/portage/make.profile
+ROOT_PROFILE_DEST=$(readlink -ev "${ROOT_PROFILE}") || exit $?
 
-if [[ $(readlink "${SYSROOT_PROFILE}" 2>/dev/null) != $(readlink "${ROOT_PROFILE}" 2>/dev/null) ]]; then
+if [[ $(readlink -e "${SYSROOT_PROFILE}" 2>/dev/null) != "${ROOT_PROFILE_DEST}" ]]; then
 	echo "Syncing ${SYSROOT_PROFILE} with ${ROOT_PROFILE}." >&2
-    cp -dTf "${ROOT_PROFILE}" "${SYSROOT_PROFILE}" || exit $?
+    ln -sfT "${ROOT_PROFILE_DEST}" "${SYSROOT_PROFILE}" || exit $?
 fi
 
 # This should only be enabled when bootstrapping.
