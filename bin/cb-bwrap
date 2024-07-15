@@ -31,7 +31,7 @@ fi
 
 if [[ ${PORTDIR} != ${ROOT_PORTDIR} && ${ROOT_PROFILE_RESOLVED} = */profiles/* ]]; then
 	echo "Auto-correcting ${ROOT_PROFILE} symlink for target system." >&2
-	ln -snf "${ROOT_PORTDIR}/profiles/${ROOT_PROFILE_RESOLVED##*/profiles/}" "${ROOT_PROFILE}" || exit $?
+	ln -sfT "${ROOT_PORTDIR}/profiles/${ROOT_PROFILE_RESOLVED##*/profiles/}" "${ROOT_PROFILE}" || exit $?
 fi
 
 export SANDBOX_WRITE=${SANDBOX_WRITE}:${ROOT%/}

@@ -92,7 +92,7 @@ ROOT_PROFILE_RESOLVED=$(readlink -m "${ROOT_PROFILE}" 2>/dev/null)
 
 if [[ ! -d ${ROOT_PROFILE} && ${ROOT_PROFILE_RESOLVED} = */profiles/* ]]; then
 	echo "Auto-correcting ${ROOT_PROFILE} symlink for build system." >&2
-	ln -snf "${PORTDIR}/profiles/${ROOT_PROFILE_RESOLVED##*/profiles/}" "${ROOT_PROFILE}" || exit $?
+	ln -sfT "${PORTDIR}/profiles/${ROOT_PROFILE_RESOLVED##*/profiles/}" "${ROOT_PROFILE}" || exit $?
 fi
 
 if [[ ! -d ${ROOT_PROFILE} ]]; then

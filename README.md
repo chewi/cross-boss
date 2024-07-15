@@ -58,7 +58,7 @@ New Gentoo installations require a little preparation and that still applies to 
 
     # make.profile symlink example.
     mkdir -p /path/to/root/etc/portage
-    ln -snf /usr/portage/profiles/default/linux/arm/13.0/armv7a /path/to/root/etc/portage/make.profile
+    ln -sfT /usr/portage/profiles/default/linux/arm/13.0/armv7a /path/to/root/etc/portage/make.profile
 
 I won't bore you with configuring make.conf as you will have obviously done it before. You can use your existing /etc/portage/make.conf as a template. Don't forget to set ARCH and ACCEPT\_KEYWORDS values that are appropriate for your target. `man make.conf` is always your friend. Note that using Gentoo's stable branch is not recommended. cross-boss focuses on testing/unstable packages and you'll get the latest upstream fixes from these too.
 
