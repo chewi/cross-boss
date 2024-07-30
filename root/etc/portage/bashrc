@@ -1,4 +1,6 @@
 post_pkg_preinst() {
+	local FILES
+
 	# Gather all the non-binary files with the --sysroot or --with-sysroot flag.
 	mapfile -t -d '' < <(find "${D}" -type f -exec grep -lZEIe "--sysroot=${ROOT}\b|--with-sysroot=${EROOT}\b" {} +) FILES
 
