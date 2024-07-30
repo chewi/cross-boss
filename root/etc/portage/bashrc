@@ -1,11 +1,16 @@
 post_pkg_preinst() {
-	local FILES
+	local FILES FILE
 
 	# Gather all the non-binary files with the --sysroot or --with-sysroot flag.
 	mapfile -t -d '' < <(find "${D}" -type f -exec grep -lZEIe "--sysroot=${ROOT}\b|--with-sysroot=${EROOT}\b" {} +) FILES
 
 	# Only continue if there are any.
 	[[ ${#FILES[@]} -eq 0 ]] && return
+
+	einfo "Stripping sysroot flags from:"
+	for FILE in "${FILES[@]}"; do
+		einfo "  - ${FILE#${D}}"
+	done
 
 	# Carefully strip --with-sysroot and each CB FLAG, which includes --sysroot.
 	local sedargs=( -i -r )
